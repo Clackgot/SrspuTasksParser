@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import requests
 import os
 import sys
@@ -45,7 +46,7 @@ def savePage(session, url):
     "Сохраняет страницу в корневую директорию"
     request = session.get(url)
     soup = BeautifulSoup(request.content,'html.parser')
-    with open("../"+fileNameFixer(soup.title.text),"w",encoding="utf-8") as f:
+    with open("../PageParser/index.html","w",encoding="utf-8") as f:
         f.write(request.text)
 def parserInit():
     """Парсер аргументов командной строки"""
@@ -53,7 +54,7 @@ def parserInit():
     parser.add_argument("--login", default="clackgot@gmail.com", help = "Почта аккаунта sdo.srspu.ru")
     parser.add_argument("--password", default="uVJ3e3Uf", help = "Пароль от аккаунта sdo.srspu.ru")
     parser.add_argument("--url", 
-                        default="https://sdo.srspu.ru/mod/quiz/review.php?attempt=759489&cmid=194870", 
+                        default="https://sdo.srspu.ru/mod/quiz/review.php?attempt=515662&cmid=19917", 
                         help = "Ссылка на страницу, которую необходимо сохранить")
     args = parser.parse_args()
     return args

@@ -1,4 +1,5 @@
-﻿using AngleSharp.Html.Parser;
+﻿using AngleSharp.Dom;
+using AngleSharp.Html.Parser;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,13 +9,11 @@ using System.Threading.Tasks;
 
 namespace PageParser
 {
-    public class TestModel
+    public class PageTest
     {
         private AngleSharp.Html.Dom.IHtmlDocument document;
         public string Author { get; private set; }
-
-
-
+        public string Score { get; private set; }
         private bool setAuthor()
         {
             var authorName = document.QuerySelector("div#user-picture div").TextContent;
@@ -22,7 +21,12 @@ namespace PageParser
             return authorName != "";
             
         }
-
+        private bool setScore()
+        {
+            var score = document.QuerySelector("tr td.cell b").TextContent;
+            Score = score;
+            return score != "";
+        }
         private bool parserInit(string documentName)
         {
             var parser = new HtmlParser();
@@ -30,7 +34,7 @@ namespace PageParser
             document = parser.ParseDocument(html);
             return document.TextContent != "";
         }
-        public TestModel(string documentName)
+        public PageTest(string documentName)
         {
             var complete = parserInit(documentName);
             if(complete)
@@ -46,11 +50,22 @@ namespace PageParser
             complete = setAuthor();
             if (complete)
             {
-                Console.WriteLine("Имя автора успешно установлена");
+                Console.WriteLine("Имя автора теста:" + Author);
             }
             else
             {
-                string errorMessage = "Не удалось найти автора теста";
+                string errorMessage = "Автор теста не найден";
+                Console.WriteLine(errorMessage);
+                throw new Exception(errorMessage);
+            }
+            complete = setScore();
+            if (complete)
+            {
+                Console.WriteLine("Оценка за тест: " + Score);
+            }
+            else
+            {
+                string errorMessage = "Оценка за тест не найдена";
                 Console.WriteLine(errorMessage);
                 throw new Exception(errorMessage);
             }

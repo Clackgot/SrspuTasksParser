@@ -7,6 +7,8 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PageDownloader", "PageDownl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PageParser", "PageParser\PageParser.csproj", "{4094CDF4-F046-4301-B433-4887F4301EDD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PageDownloaderSharp", "PageDownloaderSharp\PageDownloaderSharp.csproj", "{593A88B0-477A-4DD3-AA4D-0A242A8F684F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +21,10 @@ Global
 		{4094CDF4-F046-4301-B433-4887F4301EDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4094CDF4-F046-4301-B433-4887F4301EDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4094CDF4-F046-4301-B433-4887F4301EDD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{593A88B0-477A-4DD3-AA4D-0A242A8F684F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{593A88B0-477A-4DD3-AA4D-0A242A8F684F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{593A88B0-477A-4DD3-AA4D-0A242A8F684F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{593A88B0-477A-4DD3-AA4D-0A242A8F684F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using IronPython.Hosting;
+using Microsoft.Scripting.Hosting;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,8 +12,15 @@ namespace PageParser
     {
         static void Main(string[] args)
         {
-            var test = new TestModel("index.html");
-            Console.WriteLine(test.Author);
+            ScriptEngine engine = Python.CreateEngine();
+
+            var searchPaths = engine.GetSearchPaths();
+            searchPaths.Add("../../../PageDownloader/env/Lib");
+            engine.SetSearchPaths(searchPaths);
+
+            engine.ExecuteFile("../../../PageDownloader/PageDownloader.py");
+            var pageTest = new PageTest("../../index.html");
+
         }
     }
 }
