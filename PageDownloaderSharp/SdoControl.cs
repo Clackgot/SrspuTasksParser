@@ -18,7 +18,7 @@ namespace PageDownloaderSharp
             /// Осуществляет GET/POST/... запросы и сохраняет куки, 
             /// и настройки headers на протяжении своего существования
             /// </summary>
-            public HttpClient Client { get; private set; }
+            public HttpClient Client;
             /// <summary>
             /// Куки получаемый при первом подключении
             /// </summary>
@@ -34,7 +34,7 @@ namespace PageDownloaderSharp
             /// <summary>
             /// Парсер HTML кода
             /// </summary>
-            public HtmlParser Parser { get; private set; }
+            public HtmlParser Parser;
             /// <summary>
             /// Конструктор основного класса приложения
             /// </summary>
