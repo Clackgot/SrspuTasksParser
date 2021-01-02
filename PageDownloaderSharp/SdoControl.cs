@@ -1,11 +1,10 @@
-﻿using AngleSharp.Html.Dom;
-using AngleSharp.Html.Parser;
+﻿using AngleSharp.Html.Parser;
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Net;
+using System.Linq;
 using System.Net.Http;
-using System.Text;
-using System.Web;
+using System.Threading.Tasks;
 
 namespace PageDownloaderSharp
 {
@@ -13,135 +12,111 @@ namespace PageDownloaderSharp
     {
         public class SdoControl
         {
-            Encoding encoding = Encoding.UTF8;
-            private IHtmlDocument document;//Текущий документ
-            private HtmlParser parser;//AngleSharp парсер
-            public string LoginToken { get; private set; }//Значение скрытого элемента logintoken на странице входа sdo
-            public string Login { get; private set; }
-            public string Password { get; private set; }
+            public string Login { get; set; } = "clackgot@gmail.com";
+            public string Password { get; set; } = "uVJ3e3Uf";
+            /// <summary>
+            /// Осуществляет GET/POST/... запросы и сохраняет куки, 
+            /// и настройки headers на протяжении своего существования
+            /// </summary>
+            public HttpClient Client { get; private set; }
+            /// <summary>
+            /// Куки получаемый при первом подключении
+            /// </summary>
             public string MoodleSession { get; private set; }
-
-            public string Url { get; set; }
-
             /// <summary>
-            /// Заполняет запрос данными по умолчанию
+            /// Токен, который достаётся из скрытого input'а  
             /// </summary>
-            /// <param name="request">Запрос</param>
-            /// <returns></returns>
-            private WebRequest setRequsetData(WebRequest request)
-            {
-                HttpWebRequest httpWebRequest = (HttpWebRequest)request;
-                httpWebRequest.Host = "sdo.srspu.ru";
-                httpWebRequest.Method = "GET";
-                httpWebRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0";
-                httpWebRequest.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8";
-                httpWebRequest.Headers.Add("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3");
-                return (WebRequest)httpWebRequest;
-            }
-
+            public string LoginToken { get; private set; }
             /// <summary>
-            /// GET запрос к этому URL
+            /// Базовая страница входа в платформу
             /// </summary>
-            /// <param name="url">URL страницы, к которой нужно произвести GET запрос</param>
-            /// <returns>Возвращает ответ сервера WebRequest</returns>
-            private WebResponse GetRequest(string url)
-            {
-                WebRequest request = WebRequest.Create(url);
-                request = setRequsetData(request);
-                return request.GetResponse();
-
-            }
-            private WebResponse PostRequest(string url)
-            {
-                WebRequest request = WebRequest.Create(url);
-                request = setRequsetData(request);
-                request.Method = "POST";
-                return request.GetResponse();
-
-            }
-
+            public string Url { get; private set; } = "https://sdo.srspu.ru/login/index.php";
             /// <summary>
-            /// Get запросом получает HTML-код документа по заданному URL
+            /// Парсер HTML кода
             /// </summary>
-            /// <param name="url">URL-страницы</param>
-            /// <returns>HTML-код в виде строки string</returns>
-            private string getHtmlCode(string url)
-            {
-                WebResponse response = GetRequest(url);
-                var moodleSession = response.Headers.Get("set-cookie").Substring(14);
-                MoodleSession = moodleSession.Substring(0, moodleSession.Length - 26);
-                Stream stream = response.GetResponseStream();
-                byte[] byteArray = new byte[0];
-                int b;
-                do
-                {
-                    b = stream.ReadByte();
-                    if (b != -1)
-                    {
-                        Array.Resize(ref byteArray, byteArray.Length + 1);
-                        byteArray[byteArray.Length - 1] = (byte)b;
-                    }
-                }
-                while (b != -1);
-                response.Close();
-                stream.Close();
-                return encoding.GetString(byteArray);
-            }
-
+            public HtmlParser Parser { get; private set; }
             /// <summary>
-            /// Инициализирует парсер AngleSharp 
+            /// Конструктор основного класса приложения
             /// </summary>
-            /// <returns></returns>
-            private HtmlParser initParser()
-            {
-                return new HtmlParser();
-            }
-
-            /// <summary>
-            /// Конструктор класса, удалённой работы с sdo.srspu.ru
-            /// </summary>
-            /// <param name="url"></param>
+            public SdoControl() : this("clackgot@gmail.com", "uVJ3e3Uf") { }
             public SdoControl(string login, string password)
             {
                 Login = login;
                 Password = password;
-                Url = "https://sdo.srspu.ru/login/index.php";
-                parser = initParser();//Инициализация парсера AngleSharp
-                document = parser.ParseDocument(getHtmlCode(Url));//Инициализация IHtmlDocumnt HTML-кодом
-                setLoginToken();
+                Parser = new HtmlParser();
+                var handler = new HttpClientHandler { UseCookies = true };
+                Client = new HttpClient(handler);
+                Console.WriteLine("Логин: " + Login);
+                Console.WriteLine("Пароль: " + Password);
+                ClientInit();
+                StartUpInit().GetAwaiter().GetResult();
+                LoginAsync().GetAwaiter().GetResult();
             }
-            public SdoControl() : this("clackgot@gmail.com", "uVJ3e3Uf") { }
+            public void ClientInit()
+            {
+                Client.BaseAddress = new Uri(Url);
+                Client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+                Client.DefaultRequestHeaders.Add("Accept-Encoding", "sdo.srspu.ru");
+                Client.DefaultRequestHeaders.Add("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3");
+                Client.DefaultRequestHeaders.Add("Connection", "keep-alive");
+                Client.DefaultRequestHeaders.Add("DNT", "1");
+                Client.DefaultRequestHeaders.Add("Host", "sdo.srspu.ru");
+                Client.DefaultRequestHeaders.Add("TE", "Trailers");
+                Client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
+                Client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0");
+            }
+
 
             /// <summary>
-            /// Находит и устанавливает значение скрытого элемента страницы logintoken
+            /// Первоначальный GET запрос к платформе, 
+            /// инициализирующий токен <see cref="SdoControl.LoginToken">LoginToken</see> и сессионную cookie <see cref="SdoControl.MoodleSession">MoodleSession</see>
             /// </summary>
             /// <returns></returns>
-            private bool setLoginToken()
+            public async Task StartUpInit()
             {
-                LoginToken = document.QuerySelector("input[name=logintoken]").GetAttribute("value");
-                return LoginToken != "";
+                HttpResponseMessage responseMessage = await Client.GetAsync(Url);//GET запрос, и его запись в переменную
+                var html = await responseMessage.Content.ReadAsStringAsync();//Содержимое ответа(документ)
+                var document = Parser.ParseDocument(html);//Создание документа для парсинга
+                LoginToken = document.QuerySelector("input[name=logintoken]").GetAttribute("value");//Находим токен
+                MoodleSession = responseMessage.Headers.GetValues("set-cookie").ToList()[0];//Из заголовка ответа вытаскиваем куки
+                MoodleSession = MoodleSession.Substring(14);
+                MoodleSession = MoodleSession.Substring(0, MoodleSession.Length - 26);//Обрезаем лишнее
+                Console.WriteLine("MoodleSession: " + MoodleSession);
+                Console.WriteLine("LoginToken: " + LoginToken);
             }
-
-            private bool connect()
+            public async Task LoginAsync()
             {
-                WebRequest request = WebRequest.Create(Url);
-                request = setRequsetData(request);
-                CookieContainer cookieContainer = new CookieContainer();
-                cookieContainer.Add(new Cookie("MoodleSession", MoodleSession));
-                ((HttpWebRequest)request).CookieContainer = cookieContainer;
-
-                string data = "anchor=&logintoken="+LoginToken+"&username=clackgot%40gmail.com&password=uVJ3e3Uf";
-                byte[] byteArray = Encoding.UTF8.GetBytes(data);
-
-                using (Stream dataStream = request.GetRequestStream())
+                ///Собираем содержимое тела POST запроса
+                var content = new FormUrlEncodedContent(new[]
                 {
-                    dataStream.Write(byteArray, 0, byteArray.Length);
+                    new KeyValuePair<string, string>("anchor", ""),
+                    new KeyValuePair<string, string>("logintoken", LoginToken),
+                    new KeyValuePair<string, string>("username", Login),
+                    new KeyValuePair<string, string>("password", Password),
+                });
+                Client.DefaultRequestHeaders.Add("Cookie", "MoodleSession=" + MoodleSession);//Добавляем куки в заголовок будущих запросов
+
+                var loginResponse = await Client.PostAsync(Url, content);//Получаем результат запроса
+
+                var html = await loginResponse.Content.ReadAsStringAsync();//Содержимое ответа(документ)
+                var document = Parser.ParseDocument(html);//Создание документа для парсинга
+
+                var loginMsg = document.QuerySelector("a#loginerrormessage");
+
+                if (loginMsg == null)
+                {
+                    Console.WriteLine("Успешный вход");
+                }
+                else
+                {
+                    Console.WriteLine("Неправильный логин или пароль");
                 }
 
-                return true;
-                 
+                File.WriteAllText(@"..\..\index.html",
+                    loginResponse.Content.ReadAsStringAsync().
+                    GetAwaiter().GetResult());//Записываем результат в файл
+                Console.WriteLine("Загруженная страница в папке с проектом");
             }
-
         }
     }
 }

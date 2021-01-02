@@ -1,11 +1,6 @@
-﻿using AngleSharp.Dom;
-using AngleSharp.Html.Parser;
+﻿using AngleSharp.Html.Parser;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PageParser
 {
@@ -19,7 +14,7 @@ namespace PageParser
             var authorName = document.QuerySelector("div#user-picture div").TextContent;
             Author = authorName;
             return authorName != "";
-            
+
         }
         private bool setScore()
         {
@@ -37,7 +32,7 @@ namespace PageParser
         public PageTest(string documentName)
         {
             var complete = parserInit(documentName);
-            if(complete)
+            if (complete)
             {
                 Console.WriteLine("Парсер успешно инициализрован");
             }
