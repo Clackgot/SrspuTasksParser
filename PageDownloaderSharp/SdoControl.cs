@@ -65,8 +65,6 @@ namespace PageDownloaderSharp
                 Client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
                 Client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0");
             }
-
-
             /// <summary>
             /// Первоначальный GET запрос к платформе, 
             /// инициализирующий токен <see cref="SdoControl.LoginToken">LoginToken</see> и сессионную cookie <see cref="SdoControl.MoodleSession">MoodleSession</see>
