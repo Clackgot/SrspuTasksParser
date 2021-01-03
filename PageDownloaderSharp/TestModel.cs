@@ -4,71 +4,9 @@ using System.Linq;
 
 namespace PageDownloaderSharp
 {
-    enum QuestionType
-    {
-        Input,
-        Radio,//Радиокнопки
-        Checkbox,//
-        Select,//Менюшки <select>
-        None
-    }
 
-    /// <summary>
-    /// Ответ на вопрос
-    /// </summary>
-    class Answer
-    {
-        public bool IsCorrect { get; set; }
-        public string Text { get; set; }
-        public Answer(bool isCorrect, string text)
-        {
-            IsCorrect = isCorrect;
-            Text = text;
-        }
-    }
 
-    class Question
-    {
-        QuestionType questionType;
-        public string Text { get; private set; }
 
-        private List<Answer> answers;//Ответы на вопрос
-
-        public Question(QuestionType questionType, string text)
-        {
-            answers = new List<Answer>();
-            this.questionType = questionType;
-            Text = text;
-        }
-        public void AddAnswer(Answer answer)
-        {
-            answers.Add(answer);
-        }
-        public void Print()
-        {
-            Console.WriteLine("Тип вопроса: " + questionType.ToString());
-            Console.WriteLine("Текст вопроса: " + Text);
-            if(answers.Count == 0)
-            {
-                Console.WriteLine("Ответов пока нет");
-            }
-            else
-            {
-                foreach (var item in answers)
-                {
-                    if (item.IsCorrect)
-                    {
-                        Console.WriteLine(item.Text + " + ");
-                    }
-                    else
-                    {
-                        Console.WriteLine(item.Text + " - ");
-                    }
-                }
-            }
-        }
-        
-    }
 
     class TestModel
     {
@@ -126,20 +64,33 @@ namespace PageDownloaderSharp
                 }
                 else if (radios.Length != 0)
                 {
-                    //Console.WriteLine($"{index}. {grage} радиокнопок:{radios.Length}");
                     var questionLocal = new Question(QuestionType.Radio, questionText);
                     var spans = question.QuerySelectorAll("span.answernumber");
-                    foreach (var item in spans)
+                    if (isCorrectAnswer)
                     {
-                        bool correct = item.ParentElement.ParentElement.QuerySelector("input[checked=checked]") != null;
-                        questionLocal.AddAnswer(new Answer(correct, 
-                            item.ParentElement.TextContent));
-                        
+                        foreach (var item in spans)
+                        {
+                            bool isChecked = item.ParentElement.ParentElement.QuerySelector("input[checked=checked]") != null;
+                            if(isChecked)questionLocal.Answers.Add(new Answer(AnswerСondition.Correct,
+                                item.ParentElement.TextContent));
+                            if (!isChecked) questionLocal.Answers.Add(new Answer(AnswerСondition.Incorrect,
+                                item.ParentElement.TextContent));
+                        }
+                        questions.Add(questionLocal);
+                    }
+                    else
+                    {
+                        foreach (var item in spans)
+                        {
+                            bool isChecked = item.ParentElement.ParentElement.QuerySelector("input[checked=checked]") != null;
+                            if(isChecked) questionLocal.Answers.Add(new Answer(AnswerСondition.Incorrect,
+                                item.ParentElement.TextContent));
+                            if (!isChecked) questionLocal.Answers.Add(new Answer(AnswerСondition.None,
+                                item.ParentElement.TextContent));
+                        }
+                        questions.Add(questionLocal);
                     }
                     
-
-                    
-                    questions.Add(questionLocal);
                 }
                 else if (selects.Length != 0)
                 {
