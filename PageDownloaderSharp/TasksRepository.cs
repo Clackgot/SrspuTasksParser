@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PageDownloaderSharp
 {
@@ -87,19 +84,37 @@ namespace PageDownloaderSharp
 
         private void CalculateCheckbox()
         {
+            bool correctExsist = false;
 
+            foreach (var answer in Answers)
+            {
+                if(answer.AnswerСondition == AnswerСondition.Correct)
+                {
+                    correctExsist = true;
+                    break;
+                }
+            }
+            if(correctExsist) foreach (var answer in Answers)
+            {
+                if (answer.AnswerСondition == AnswerСondition.None)
+                {
+                    answer.AnswerСondition = AnswerСondition.Incorrect;
+                }
+            }
         }
 
 
         public void CalculateCorrectAnswer()
         {
-            switch(QuestionType)
+            switch (QuestionType)
             {
                 case QuestionType.Radio:
                     CalculateRadio();
                     break;
+                case QuestionType.Checkbox:
+                    CalculateCheckbox();
+                    break;
             }
-
         }
         public void Print()
         {
@@ -128,7 +143,6 @@ namespace PageDownloaderSharp
                 }
             }
         }
-
     }
 
     class TasksRepository
@@ -143,9 +157,19 @@ namespace PageDownloaderSharp
             var question1 = new Question(QuestionType.Radio, "Совокупность людей, выделенных на основе поведенческих признаков - это ...");
             question1.Answers.Add(new Answer(AnswerСondition.None, "маргиналы"));
             question1.Answers.Add(new Answer(AnswerСondition.None, "массовая общность (агрегат)"));
-            question1.Answers.Add(new Answer(AnswerСondition.None, "номинальная социальная группа"));
+            question1.Answers.Add(new Answer(AnswerСondition.Incorrect, "номинальная социальная группа"));
             question1.Answers.Add(new Answer(AnswerСondition.None, "реальная социальная группа"));
+
+
+            var question3 = new Question(QuestionType.Checkbox, "Какие последовательные контейнерами поддерживают произвольный доступ?");
+            question3.Answers.Add(new Answer(AnswerСondition.None, "массив"));
+            question3.Answers.Add(new Answer(AnswerСondition.Correct, "однонаправленный список"));
+            question3.Answers.Add(new Answer(AnswerСondition.Correct, "двунаправленный список"));
+            question3.Answers.Add(new Answer(AnswerСondition.None, "вектор"));
+            question3.Answers.Add(new Answer(AnswerСondition.None, "дек"));
+
             questions.Add(question1);
+            questions.Add(question3);
             return true;
         }
         private bool isAnswersEqual(List<Answer> answers1, List<Answer> answers2)
@@ -164,6 +188,37 @@ namespace PageDownloaderSharp
             }
             return true;
         }
+
+        private void questionRadioSet(Question remoteQuestion, Question storageQuestion)
+        {
+            if (storageQuestion.QuestionType == QuestionType.Radio)
+                foreach (var item in storageQuestion.Answers)//Перебираем ответы найденого задания
+                {
+                    if (item.AnswerСondition == AnswerСondition.None)//Если состояния ответа не задано
+                    {
+                        //Обновляем его значение из входного параметра
+                        item.AnswerСondition = remoteQuestion.Answers.Find(it => it.Text == item.Text).AnswerСondition;
+                    }
+                    else if (item.AnswerСondition == AnswerСondition.Incorrect)//Если вариант ответа неверен
+                    {
+                        var storageAnswerCondition = item.AnswerСondition;
+                        var remoteAnswerCondition = remoteQuestion.Answers.Find(it => it.Text == item.Text).AnswerСondition;//Но по новым данным он верно
+                                                                                                                            //Заменяем его значение на верное
+                        if (remoteAnswerCondition == AnswerСondition.Correct) item.AnswerСondition = AnswerСondition.Correct;
+                    }
+                }
+        }
+        private void questionCheckboxSet(Question remoteQuestion, Question storageQuestion)
+        {
+            if (storageQuestion.QuestionType == QuestionType.Checkbox)
+            {
+                foreach (var item in storageQuestion.Answers)//Перебираем ответы найденого задания
+                {
+                    item.AnswerСondition = remoteQuestion.Answers.Find(it => it.Text == item.Text).AnswerСondition;
+                }
+            }
+        }
+
         public void AddQuestion(Question question)
         {
             // Если текст задания, кол-во ответов и тип задания совпадают находим в базе это задание
@@ -171,34 +226,26 @@ namespace PageDownloaderSharp
             && item.QuestionType == question.QuestionType
             && isAnswersEqual(item.Answers, question.Answers)
             );
-
-
-
             if (questionFinded != null)// Если задание существует
             {
-                foreach (var item in questionFinded.Answers)//Перебираем ответы найденого задания
+                if (questionFinded.QuestionType == QuestionType.Radio)
                 {
-                    if(item.AnswerСondition == AnswerСondition.None)//Если состояния ответа не задано
-                    {
-                        //Обновляем его значение из входного параметра
-                        item.AnswerСondition = question.Answers.Find(it => it.Text == item.Text).AnswerСondition;
-                    }
-                    else if (item.AnswerСondition == AnswerСondition.Incorrect)//Если вариант ответа неверен
-                    {
-                        var storageAnswerCondition = item.AnswerСondition;
-                        var remoteAnswerCondition = question.Answers.Find(it => it.Text == item.Text).AnswerСondition;//Но по новым данным он верно
-                        //Заменяем его значение на верное
-                        if(remoteAnswerCondition == AnswerСondition.Correct) item.AnswerСondition = AnswerСondition.Correct;
-                    }
-                }
+                    questionRadioSet(question, questionFinded);
+                }//Если это радиокнопка
+                else if (questionFinded.QuestionType == QuestionType.Checkbox)
+                {
+                    questionCheckboxSet(question, questionFinded);
+                }//Если это чекбокс
+                
+
                 questionFinded.CalculateCorrectAnswer();//Нормализуем ответы
+
             }
             else
             {
                 questions.Add(question);//Иначе добавляем новое задание в базу
             }
         }
-
         public void Print()
         {
             foreach (var question in questions)

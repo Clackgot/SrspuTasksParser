@@ -33,7 +33,7 @@ namespace PageDownloaderSharp
         private void setMark()
         {
             var element = document.All.First(o => o.TextContent == "Оценка" && o.TagName == "TH"); // If text, assign id.
-            if(element != null)
+            if (element != null)
             {
                 Mark = element.ParentElement.QuerySelector("td b").TextContent;
             }
@@ -41,7 +41,7 @@ namespace PageDownloaderSharp
             {
                 Console.WriteLine("Оценка не найдена");
             }
-            
+
         }
 
         private void setQuestions()
@@ -49,7 +49,7 @@ namespace PageDownloaderSharp
             int index = 1;
             foreach (var question in document.QuerySelectorAll("div[id^=question-]"))
             {
-                
+
                 var grage = question.QuerySelector("div.grade").TextContent;
                 bool isCorrectAnswer = (grage == "Баллов: 1 из 1");
                 var questionText = question.QuerySelector("div.qtext").TextContent;
@@ -57,8 +57,8 @@ namespace PageDownloaderSharp
                 var radios = question.QuerySelectorAll("input[type=radio]");
                 var selects = question.QuerySelectorAll("select.custom-select");
                 var inputs = question.QuerySelectorAll("input[id*=answer][type=text]");
-                
-                if(checkboxes.Length != 0)
+
+                if (checkboxes.Length != 0)
                 {
                     //Console.WriteLine($"{index}. {grage} чекбоксов:{checkboxes.Length}");
                 }
@@ -71,8 +71,8 @@ namespace PageDownloaderSharp
                         foreach (var item in spans)
                         {
                             bool isChecked = item.ParentElement.ParentElement.QuerySelector("input[checked=checked]") != null;
-                            if(isChecked)questionLocal.Answers.Add(new Answer(AnswerСondition.Correct,
-                                item.ParentElement.TextContent));
+                            if (isChecked) questionLocal.Answers.Add(new Answer(AnswerСondition.Correct,
+                                  item.ParentElement.TextContent));
                             if (!isChecked) questionLocal.Answers.Add(new Answer(AnswerСondition.Incorrect,
                                 item.ParentElement.TextContent));
                         }
@@ -83,14 +83,14 @@ namespace PageDownloaderSharp
                         foreach (var item in spans)
                         {
                             bool isChecked = item.ParentElement.ParentElement.QuerySelector("input[checked=checked]") != null;
-                            if(isChecked) questionLocal.Answers.Add(new Answer(AnswerСondition.Incorrect,
-                                item.ParentElement.TextContent));
+                            if (isChecked) questionLocal.Answers.Add(new Answer(AnswerСondition.Incorrect,
+                                 item.ParentElement.TextContent));
                             if (!isChecked) questionLocal.Answers.Add(new Answer(AnswerСondition.None,
                                 item.ParentElement.TextContent));
                         }
                         questions.Add(questionLocal);
                     }
-                    
+
                 }
                 else if (selects.Length != 0)
                 {

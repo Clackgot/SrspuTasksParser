@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace PageDownloaderSharp
+﻿namespace PageDownloaderSharp
 {
     partial class Program
     {
@@ -14,12 +12,20 @@ namespace PageDownloaderSharp
             //var testModel = new TestModel(sdo.GetPage(testUrl));
             TasksRepository tasksRepository = new TasksRepository("data.xls");
             var question2 = new Question(QuestionType.Radio, "Совокупность людей, выделенных на основе поведенческих признаков - это ...");
-            question2.Answers.Add(new Answer(AnswerСondition.None, "маргиналы"));
-            question2.Answers.Add(new Answer(AnswerСondition.None, "массовая общность (агрегат)"));
+            question2.Answers.Add(new Answer(AnswerСondition.Incorrect, "маргиналы"));
+            question2.Answers.Add(new Answer(AnswerСondition.Incorrect, "массовая общность (агрегат)"));
             question2.Answers.Add(new Answer(AnswerСondition.None, "номинальная социальная группа"));
             question2.Answers.Add(new Answer(AnswerСondition.None, "реальная социальная группа"));
 
+            var question3 = new Question(QuestionType.Checkbox, "Какие последовательные контейнерами поддерживают произвольный доступ?");
+            question3.Answers.Add(new Answer(AnswerСondition.Correct, "массив"));
+            question3.Answers.Add(new Answer(AnswerСondition.None, "однонаправленный список"));
+            question3.Answers.Add(new Answer(AnswerСondition.Incorrect, "двунаправленный список"));
+            question3.Answers.Add(new Answer(AnswerСondition.Correct, "вектор"));
+            question3.Answers.Add(new Answer(AnswerСondition.None, "дек"));
+
             tasksRepository.AddQuestion(question2);
+            tasksRepository.AddQuestion(question3);
             tasksRepository.Print();
         }
     }
