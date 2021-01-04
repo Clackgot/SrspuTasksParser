@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace PageDownloaderSharp
 {
@@ -30,7 +31,7 @@ namespace PageDownloaderSharp
         /// </summary>
         public void Print()
         {
-            Console.WriteLine($"{Text.Item1} - {Text.Item2} ({Math.Floor(Propability*100)}%)");
+            Console.WriteLine($"{Text.Item1} [{Text.Item2}] ({Math.Floor(Propability*100)}%)");
         }
     }
     public class SelectQuestion
@@ -94,15 +95,15 @@ namespace PageDownloaderSharp
         public static bool operator !=(SelectQuestion selectQuestion1, SelectQuestion selectQuestion2)
         {
             if(selectQuestion1.Answers.Count != selectQuestion2.Answers.Count) return true;
-            if (selectQuestion1.Text != selectQuestion2.Text) return true;
+            if (selectQuestion1.Text.ToLower() != selectQuestion2.Text.ToLower()) return true;
 
             bool x = false;
             bool y = false;
             foreach (var item in selectQuestion1.Answers)
             {
 
-                x = selectQuestion2.Answers.Exists(m => m.Text.Item1 == item.Text.Item1);
-                y = selectQuestion2.Answers.Exists(m => m.Text.Item2 == item.Text.Item2);
+                x = selectQuestion2.Answers.Exists(m => m.Text.Item1.ToLower() == item.Text.Item1.ToLower());
+                y = selectQuestion2.Answers.Exists(m => m.Text.Item2.ToLower() == item.Text.Item2.ToLower());
                 if (!(x || y)) return true;
             }
             return false;
@@ -144,7 +145,7 @@ namespace PageDownloaderSharp
         /// </summary>
         public void Print()
         {
-            Console.WriteLine($"{Text} ({Math.Floor(Propability * 100)}%)");
+            Console.WriteLine($"[v]{Text} ({Math.Floor(Propability * 100)}%)");
         }
     }
 
@@ -167,14 +168,38 @@ namespace PageDownloaderSharp
 
 
 
+        public void Update(CheckboxQuestion inCheckboxQuestion)
+        {
+            if (this != inCheckboxQuestion) return;//Если входящее задание не равно текущему не обновлять и выйти из метода
+            double inQuestion = 0.0;
+            double storageQuestion = 0.0;
+            foreach (var item in Answers)
+            {
+                storageQuestion += Math.Abs((item.Propability - 0.5));
+            }
+            foreach (var item in inCheckboxQuestion.Answers)
+            {
+                inQuestion += Math.Abs((item.Propability - 0.5));
+            }
+            if(inQuestion > storageQuestion)
+            {
+                Answers.Clear();
+                Answers = inCheckboxQuestion.Answers;
+            }
+            else
+            {
+                Console.WriteLine("Апдейт не нужен");
+            }
+        }
+
         public static bool operator !=(CheckboxQuestion selectQuestion1, CheckboxQuestion selectQuestion2)
         {
             if (selectQuestion1.Answers.Count != selectQuestion2.Answers.Count) return true;
-            if (selectQuestion1.Text != selectQuestion2.Text) return true;
+            if (selectQuestion1.Text.ToLower() != selectQuestion2.Text.ToLower()) return true;
 
             foreach (var item in selectQuestion1.Answers)
             {
-                if (!(selectQuestion2.Answers.Exists(m2 => m2.Text == item.Text)))
+                if (!(selectQuestion2.Answers.Exists(m2 => m2.Text.ToLower() == item.Text.ToLower())))
                 {
                     return true;
                 }
@@ -210,11 +235,101 @@ namespace PageDownloaderSharp
     }
 
 
+    public class RadioAnswer
+    {
+        public string Text { get; set; }
+        private double propability;
+        public double Propability { get { return propability; } set { if ((value >= 0) && (value <= 1)) propability = value; } }
+        public void Print()
+        {
+            Console.WriteLine($"(o) {Text} ({Math.Floor(Propability * 100)}%)");
+        }
+        public RadioAnswer(string text, double propability)
+        {
+            Text = text;
+            Propability = propability;
+        }
+    }
+    public class RadioQuestion
+    {
+        public List<RadioAnswer> Answers { get; set; } = new List<RadioAnswer>();
+        /// <summary>
+        /// Текст задания
+        /// </summary>
+        public string Text { get; set; }
+
+        public RadioQuestion(string text)
+        {
+            Text = text;
+        }
+
+        public void Update(RadioQuestion inRadioQuestion)
+        {
+            if (this != inRadioQuestion) return;//Если входящее задание не равно текущему не обновлять и выйти из метода
+            double maxStoragePropability = 0;
+            double maxInPropability = 0;
+            foreach (var storageAnswer in Answers)
+            {
+                if (storageAnswer.Propability > maxStoragePropability) maxStoragePropability = storageAnswer.Propability;
+            }
+            foreach (var inAnswer in inRadioQuestion.Answers)
+            {
+                if (inAnswer.Propability > maxInPropability) maxInPropability = inAnswer.Propability;
+            }
+            if(maxStoragePropability < maxInPropability)
+            {
+                Answers.Clear();
+                Answers = inRadioQuestion.Answers;
+            }
+        }
+
+        public static bool operator !=(RadioQuestion radioQuestion1, RadioQuestion radioQuestion2)
+        {
+            if (radioQuestion1.Answers.Count != radioQuestion2.Answers.Count) return true;
+            if (radioQuestion1.Text.ToLower() != radioQuestion2.Text.ToLower()) return true;
+
+            foreach (var item in radioQuestion1.Answers)
+            {
+                if (!(radioQuestion2.Answers.Exists(m2 => m2.Text.ToLower() == item.Text.ToLower())))
+                {
+                    return true;
+                }
+            }
+            return false;
+
+        }
+
+        public static bool operator ==(RadioQuestion radioQuestion1, RadioQuestion radioQuestion2)
+        {
+            return !(radioQuestion1 != radioQuestion2);
+        }
+
+        public void Print()
+        {
+            Console.WriteLine(Text);
+            foreach (var item in Answers)
+            {
+                item.Print();
+            }
+            Console.WriteLine();
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+    }
+
 
     class TasksRepository
     {
         public List<SelectQuestion> SelectQuestions { get; set; } = new List<SelectQuestion>();
         public List<CheckboxQuestion> CheckboxQuestions { get; set; } = new List<CheckboxQuestion>();
+        public List<RadioQuestion> RadioQuestions { get; set; } = new List<RadioQuestion>();
         public bool Save()
         {
             return true;
@@ -245,31 +360,58 @@ namespace PageDownloaderSharp
         private void LoadCheckboxQuestions()
         {
             CheckboxQuestion checkboxQuestion1 = new CheckboxQuestion("Какие последовательные контейнерами поддерживают произвольный доступ?");
-            checkboxQuestion1.Answers.Add(new CheckboxAnswer("массив", 0.32));
-            checkboxQuestion1.Answers.Add(new CheckboxAnswer("однонаправленный список", 0.94));
-            checkboxQuestion1.Answers.Add(new CheckboxAnswer("двунаправленный список", 0.77));
-            checkboxQuestion1.Answers.Add(new CheckboxAnswer("вектор", 0.3));
-            checkboxQuestion1.Answers.Add(new CheckboxAnswer("дек", 0.4));
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("массив", 0.65));
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("однонаправленный список", 0.5));
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("двунаправленный список", 0.5));
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("вектор", 0.5));
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("дек", 0.5));
 
 
             CheckboxQuestion checkboxQuestion2 = new CheckboxQuestion("Какие последовательные контейнерами поддерживают произвольный доступ?");
-            checkboxQuestion2.Answers.Add(new CheckboxAnswer("массив", 0));
-            checkboxQuestion2.Answers.Add(new CheckboxAnswer("однонаправленный список", 1));
-            checkboxQuestion2.Answers.Add(new CheckboxAnswer("двунаправленный список", 1));
-            checkboxQuestion2.Answers.Add(new CheckboxAnswer("дек", 0));
-            checkboxQuestion2.Answers.Add(new CheckboxAnswer("вектор", 1));
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("массив", 0.55));
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("однонаправленный список", 0.55));
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("двунаправленный список", 0.55));
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("дек", 0.55));
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("вектор", 0.55));
 
 
             CheckboxQuestions.Add(checkboxQuestion1);
             CheckboxQuestions.Add(checkboxQuestion2);
+
+            checkboxQuestion1.Update(checkboxQuestion2);
+        }
+
+        private void LoadRadioQuestions()
+        {
+            RadioQuestion radioQuestion1 = new RadioQuestion("Что Не относится к критериям социальной стратификации современного общества?");
+            radioQuestion1.Answers.Add(new RadioAnswer("возраст", 0.65));
+            radioQuestion1.Answers.Add(new RadioAnswer("престиж", 0.15));
+            radioQuestion1.Answers.Add(new RadioAnswer("доход", 0.44));
+            radioQuestion1.Answers.Add(new RadioAnswer("образование", 0.33));
+
+            RadioQuestion radioQuestion2 = new RadioQuestion("Что НЕ относится к критериям социальной стратификации современного общества?");
+            radioQuestion2.Answers.Add(new RadioAnswer("возраст", 0.65));
+            radioQuestion2.Answers.Add(new RadioAnswer("престиж", 0.15));
+            radioQuestion2.Answers.Add(new RadioAnswer("образование", 0.69));
+            radioQuestion2.Answers.Add(new RadioAnswer("доход", 0.44));
+
+            RadioQuestions.Add(radioQuestion1);
+            RadioQuestions.Add(radioQuestion2);
         }
 
         public bool Load()
         {
+
+
+
             LoadSelectQuesions();
 
             LoadCheckboxQuestions();
 
+            LoadRadioQuestions();
+
+
+            RadioQuestions[0].Update(RadioQuestions[1]);
 
             return true;
         }
@@ -290,11 +432,19 @@ namespace PageDownloaderSharp
                 question.Print();
             }
         }
+
+        private void PrintRadioQuestions()
+        {
+            foreach (var question in RadioQuestions)
+            {
+                question.Print();
+            }
+        }
         public void Print()
         {
             //PrintSelectQuestions();
-            PrintCheckboxQuestions();
-            Console.WriteLine(CheckboxQuestions[0] == CheckboxQuestions[1]);
+            //PrintCheckboxQuestions();
+            PrintRadioQuestions();
         }
         public TasksRepository(string pathExcelFile)
         {
