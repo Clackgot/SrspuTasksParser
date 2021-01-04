@@ -3,256 +3,298 @@ using System.Collections.Generic;
 
 namespace PageDownloaderSharp
 {
-    enum QuestionType
+    public class SelectAnswer
     {
-        Input,
-        Radio,//Радиокнопки
-        Checkbox,//
-        Select,//Менюшки <select>
-        None
-    }
-    enum AnswerСondition
-    {
-        Correct,
-        Incorrect,
-        None
-    }
+        /// <summary>
+        /// Ответ в виде кортежа из двух строк
+        /// </summary>
+        public Tuple<string, string> Text { get; set; }
+        private double propability;
+        /// <summary>
+        /// Точность ответа
+        /// </summary>
+        public double Propability { get { return propability; } set { if ((value >= 0) && (value <= 1)) propability = value; } }
 
-    /// <summary>
-    /// Ответ на вопрос
-    /// </summary>
-    class Answer
-    {
-        public AnswerСondition AnswerСondition { get; set; }
-        public string Text { get; set; }
-        public Answer(AnswerСondition answerСondition, string text)
+        /// <summary>
+        /// Конструктор класса задания с селекторами
+        /// </summary>
+        /// <param name="answer">Вариант ответа задания</param>
+        /// <param name="propability">Точность ответа на задание</param>
+        public SelectAnswer(Tuple<string, string> answer, double propability)
         {
-            AnswerСondition = answerСondition;
-            Text = text;
+            Text = answer;
+            Propability = propability;
         }
-    }
-
-    class Question
-    {
-        public QuestionType QuestionType { get; set; }
-        public string Text { get; private set; }
-
-        public List<Answer> Answers { get; set; }
-
-        public Question(QuestionType questionType, string text)
-        {
-            Answers = new List<Answer>();
-            QuestionType = questionType;
-            Text = text;
-        }
-
-        private void CalculateRadio()
-        {
-            int incorrectCounter = 0;// Счётчик неправильный ответов
-            foreach (var item in Answers)// Подсчитывает неправильные ответы
-            {
-                if (item.AnswerСondition == AnswerСondition.Incorrect)
-                {
-                    incorrectCounter++;
-                }
-            }
-            if (incorrectCounter == (Answers.Count - 1))// Если неверные ответы все, кроме одного
-            {
-                foreach (var item in Answers)
-                {
-                    if (item.AnswerСondition == AnswerСondition.None)// Находим последний ответ
-                    {
-                        item.AnswerСondition = AnswerСondition.Correct;// И устанавливаем его верных
-                    }
-                }
-            }
-            foreach (var item in Answers)
-            {
-                if (item.AnswerСondition == AnswerСondition.Correct)// Если есть верный ответ
-                {
-                    foreach (var it in Answers)
-                    {
-                        if (it.AnswerСondition != AnswerСondition.Correct)// То выставляем остальные ответы верными
-                        {
-                            it.AnswerСondition = AnswerСondition.Incorrect;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-
-        private void CalculateCheckbox()
-        {
-            bool correctExsist = false;
-
-            foreach (var answer in Answers)
-            {
-                if(answer.AnswerСondition == AnswerСondition.Correct)
-                {
-                    correctExsist = true;
-                    break;
-                }
-            }
-            if(correctExsist) foreach (var answer in Answers)
-            {
-                if (answer.AnswerСondition == AnswerСondition.None)
-                {
-                    answer.AnswerСondition = AnswerСondition.Incorrect;
-                }
-            }
-        }
-
-
-        public void CalculateCorrectAnswer()
-        {
-            switch (QuestionType)
-            {
-                case QuestionType.Radio:
-                    CalculateRadio();
-                    break;
-                case QuestionType.Checkbox:
-                    CalculateCheckbox();
-                    break;
-            }
-        }
+        /// <summary>
+        /// Вывод на в консоль варианта ответа
+        /// </summary>
         public void Print()
         {
-            Console.WriteLine("Тип вопроса: " + QuestionType.ToString());
-            Console.WriteLine("Текст вопроса: " + Text);
-            if (Answers.Count == 0)
-            {
-                Console.WriteLine("Ответов пока нет");
-            }
-            else
-            {
-                foreach (var item in Answers)
-                {
-                    if (item.AnswerСondition == AnswerСondition.Correct)
-                    {
-                        Console.WriteLine(item.Text + " + ");
-                    }
-                    else if (item.AnswerСondition == AnswerСondition.Incorrect)
-                    {
-                        Console.WriteLine(item.Text + " - ");
-                    }
-                    else
-                    {
-                        Console.WriteLine(item.Text);
-                    }
-                }
-            }
+            Console.WriteLine($"{Text.Item1} - {Text.Item2} ({Math.Floor(Propability*100)}%)");
         }
     }
+    public class SelectQuestion
+    {
+        /// <summary>
+        /// Список вариантов ответа
+        /// </summary>
+        public List<SelectAnswer> Answers { get; set; } = new List<SelectAnswer>();
+        /// <summary>
+        /// Текст задания
+        /// </summary>
+        public string Text { get; set; }
+
+        /// <summary>
+        /// Конструктор класса
+        /// </summary>
+        /// <param name="text">Текст задания</param>
+        public SelectQuestion(string text)
+        {
+            Text = text;
+        }
+
+        /// <summary>
+        /// Обновляет ответы задания на более точные, при условии того, 
+        /// что сумма вероятностей правильного ответа входящего задания больше суммы вероятностей текущего
+        /// </summary>
+        /// <param name="inSelectQuestion">Задание для обновления</param>
+        public void Update(SelectQuestion inSelectQuestion)
+        {
+            if (this != inSelectQuestion) return;//Если входящее задание не равно текущему не обновлять и выйти из метода
+            double sumInPropability = 0.0;//Сумма вероятностей ответов входящего задания
+            double sumMaxStoragePropability = 0.0;//Сумма вероятностей ответов тукущего задания
+            foreach (var inSelectAnswer in inSelectQuestion.Answers)
+            {
+                sumInPropability += inSelectAnswer.Propability;
+            }
+            foreach (var answer in Answers)
+            {
+                sumMaxStoragePropability += answer.Propability;
+            }
+            //Если сумма вероятностей правильного ответа выше 
+            //во входящем задании - обновить ответы текущего задания
+            if (sumInPropability > sumMaxStoragePropability)
+            {
+                Answers.Clear();
+                Answers = inSelectQuestion.Answers;
+            }
+        }
+
+
+        /// <summary>
+        /// Перегруженный оператор сравнения двух заданий
+        /// </summary>
+        /// <param name="selectQuestion1">Первое задание для сравнение</param>
+        /// <param name="selectQuestion2">Второе задание для сравнение</param>
+        /// <returns></returns>
+        public static bool operator ==(SelectQuestion selectQuestion1, SelectQuestion selectQuestion2)
+        {
+            return !(selectQuestion1 != selectQuestion2);
+        }
+        public static bool operator !=(SelectQuestion selectQuestion1, SelectQuestion selectQuestion2)
+        {
+            if(selectQuestion1.Answers.Count != selectQuestion2.Answers.Count) return true;
+            if (selectQuestion1.Text != selectQuestion2.Text) return true;
+
+            bool x = false;
+            bool y = false;
+            foreach (var item in selectQuestion1.Answers)
+            {
+
+                x = selectQuestion2.Answers.Exists(m => m.Text.Item1 == item.Text.Item1);
+                y = selectQuestion2.Answers.Exists(m => m.Text.Item2 == item.Text.Item2);
+                if (!(x || y)) return true;
+            }
+            return false;
+        }
+        /// <summary>
+        /// Вывод задания в консоль
+        /// </summary>
+        public void Print()
+        {
+            Console.WriteLine(Text);
+            foreach (var item in Answers)
+            {
+                item.Print();
+            }
+            Console.WriteLine();
+        }
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+    }
+
+    public class CheckboxAnswer
+    {
+        public string Text { get; set; }
+        private double propability;
+        public double Propability { get { return propability; } set { if ((value >= 0) && (value <= 1)) propability = value; } }
+        public CheckboxAnswer(string text, double propability)
+        {
+            Text = text;
+            Propability = propability;
+        }
+        /// <summary>
+        /// Вывод на в консоль варианта ответа
+        /// </summary>
+        public void Print()
+        {
+            Console.WriteLine($"{Text} ({Math.Floor(Propability * 100)}%)");
+        }
+    }
+
+    public class CheckboxQuestion
+    {
+        /// <summary>
+        /// Список вариантов ответа
+        /// </summary>
+        public List<CheckboxAnswer> Answers { get; set; } = new List<CheckboxAnswer>();
+
+        /// <summary>
+        /// Текст задания
+        /// </summary>
+        public string Text { get; set; }
+
+        public CheckboxQuestion(string text)
+        {
+            Text = text;
+        }
+
+
+
+        public static bool operator !=(CheckboxQuestion selectQuestion1, CheckboxQuestion selectQuestion2)
+        {
+            if (selectQuestion1.Answers.Count != selectQuestion2.Answers.Count) return true;
+            if (selectQuestion1.Text != selectQuestion2.Text) return true;
+
+            foreach (var item in selectQuestion1.Answers)
+            {
+                if (!(selectQuestion2.Answers.Exists(m2 => m2.Text == item.Text)))
+                {
+                    return true;
+                }
+            }
+            return false;
+
+        }
+
+        public static bool operator ==(CheckboxQuestion selectQuestion1, CheckboxQuestion selectQuestion2)
+        {
+            return !(selectQuestion1 != selectQuestion2);
+        }
+
+
+        public void Print()
+        {
+            Console.WriteLine(Text);
+            foreach (var item in Answers)
+            {
+                item.Print();
+            }
+            Console.WriteLine();
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+    }
+
+
 
     class TasksRepository
     {
-        public List<Question> questions = new List<Question>();
+        public List<SelectQuestion> SelectQuestions { get; set; } = new List<SelectQuestion>();
+        public List<CheckboxQuestion> CheckboxQuestions { get; set; } = new List<CheckboxQuestion>();
         public bool Save()
         {
             return true;
         }
+
+
+        private void LoadSelectQuesions()
+        {
+            SelectQuestion selectQuestion1 = new SelectQuestion("Установите соответствие между примерами и формами культуры");
+            selectQuestion1.Answers.Add(new SelectAnswer(new Tuple<string, string>("Сказка \"Теремок\"", "народная культура"), 0.23));
+            selectQuestion1.Answers.Add(new SelectAnswer(new Tuple<string, string>("Музыка Баха", "элитарная культура"), 10.23));
+            selectQuestion1.Answers.Add(new SelectAnswer(new Tuple<string, string>("Песня \"Рюмка водки на столе\", исполняемая Григорием Лепсом", "массовая культура"), 0.23));
+
+            SelectQuestion selectQuestion2 = new SelectQuestion("Установите соответствие между примерами и формами культуры");
+            selectQuestion2.Answers.Add(new SelectAnswer(new Tuple<string, string>("наблюдение, самонаблюдение", "психодиагностические методы"), 0.13));
+            selectQuestion2.Answers.Add(new SelectAnswer(new Tuple<string, string>("лабораторный, естественный, формирующий эксперименты", "обсервационные методы"), 0.41));
+            selectQuestion2.Answers.Add(new SelectAnswer(new Tuple<string, string>("тесты, анкеты, социометрия, интервью, беседа", "экспериментальные методы"), 0.87));
+
+            SelectQuestion selectQuestion3 = new SelectQuestion("Установите соответствие между примерами и формами культуры");
+            selectQuestion3.Answers.Add(new SelectAnswer(new Tuple<string, string>("наблюдение, самонаблюдение", "экспериментальные методы"), 0.13));
+            selectQuestion3.Answers.Add(new SelectAnswer(new Tuple<string, string>("лабораторный, естественный, формирующий эксперименты", "обсервационные методы"), 0.11));
+            selectQuestion3.Answers.Add(new SelectAnswer(new Tuple<string, string>("тесты, анкеты, социометрия, интервью, беседа", "психодиагностические методы"), 0.87));
+
+            SelectQuestions.Add(selectQuestion1);
+            SelectQuestions.Add(selectQuestion2);
+            SelectQuestions.Add(selectQuestion3);
+        }
+        private void LoadCheckboxQuestions()
+        {
+            CheckboxQuestion checkboxQuestion1 = new CheckboxQuestion("Какие последовательные контейнерами поддерживают произвольный доступ?");
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("массив", 0.32));
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("однонаправленный список", 0.94));
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("двунаправленный список", 0.77));
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("вектор", 0.3));
+            checkboxQuestion1.Answers.Add(new CheckboxAnswer("дек", 0.4));
+
+
+            CheckboxQuestion checkboxQuestion2 = new CheckboxQuestion("Какие последовательные контейнерами поддерживают произвольный доступ?");
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("массив", 0));
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("однонаправленный список", 1));
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("двунаправленный список", 1));
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("дек", 0));
+            checkboxQuestion2.Answers.Add(new CheckboxAnswer("вектор", 1));
+
+
+            CheckboxQuestions.Add(checkboxQuestion1);
+            CheckboxQuestions.Add(checkboxQuestion2);
+        }
+
         public bool Load()
         {
-            var question1 = new Question(QuestionType.Radio, "Совокупность людей, выделенных на основе поведенческих признаков - это ...");
-            question1.Answers.Add(new Answer(AnswerСondition.None, "маргиналы"));
-            question1.Answers.Add(new Answer(AnswerСondition.None, "массовая общность (агрегат)"));
-            question1.Answers.Add(new Answer(AnswerСondition.Incorrect, "номинальная социальная группа"));
-            question1.Answers.Add(new Answer(AnswerСondition.None, "реальная социальная группа"));
+            LoadSelectQuesions();
+
+            LoadCheckboxQuestions();
 
 
-            var question3 = new Question(QuestionType.Checkbox, "Какие последовательные контейнерами поддерживают произвольный доступ?");
-            question3.Answers.Add(new Answer(AnswerСondition.None, "массив"));
-            question3.Answers.Add(new Answer(AnswerСondition.Correct, "однонаправленный список"));
-            question3.Answers.Add(new Answer(AnswerСondition.Correct, "двунаправленный список"));
-            question3.Answers.Add(new Answer(AnswerСondition.None, "вектор"));
-            question3.Answers.Add(new Answer(AnswerСondition.None, "дек"));
-
-            questions.Add(question1);
-            questions.Add(question3);
-            return true;
-        }
-        private bool isAnswersEqual(List<Answer> answers1, List<Answer> answers2)
-        {
-            if (answers1.Count != answers2.Count)
-            {
-                return false;
-            }
-            foreach (var answer in answers1) // Перебираем ответы из задания в базе
-            {
-                //Если удалённый ответ не существует среди ответов в базе - значит задания не равны
-                if (!answers2.Exists(item => item.Text == answer.Text))
-                {
-                    return false;
-                }
-            }
             return true;
         }
 
-        private void questionRadioSet(Question remoteQuestion, Question storageQuestion)
+
+
+        private void PrintSelectQuestions()
         {
-            if (storageQuestion.QuestionType == QuestionType.Radio)
-                foreach (var item in storageQuestion.Answers)//Перебираем ответы найденого задания
-                {
-                    if (item.AnswerСondition == AnswerСondition.None)//Если состояния ответа не задано
-                    {
-                        //Обновляем его значение из входного параметра
-                        item.AnswerСondition = remoteQuestion.Answers.Find(it => it.Text == item.Text).AnswerСondition;
-                    }
-                    else if (item.AnswerСondition == AnswerСondition.Incorrect)//Если вариант ответа неверен
-                    {
-                        var storageAnswerCondition = item.AnswerСondition;
-                        var remoteAnswerCondition = remoteQuestion.Answers.Find(it => it.Text == item.Text).AnswerСondition;//Но по новым данным он верно
-                                                                                                                            //Заменяем его значение на верное
-                        if (remoteAnswerCondition == AnswerСondition.Correct) item.AnswerСondition = AnswerСondition.Correct;
-                    }
-                }
-        }
-        private void questionCheckboxSet(Question remoteQuestion, Question storageQuestion)
-        {
-            if (storageQuestion.QuestionType == QuestionType.Checkbox)
+            foreach (var question in SelectQuestions)
             {
-                foreach (var item in storageQuestion.Answers)//Перебираем ответы найденого задания
-                {
-                    item.AnswerСondition = remoteQuestion.Answers.Find(it => it.Text == item.Text).AnswerСondition;
-                }
+                question.Print();
             }
         }
-
-        public void AddQuestion(Question question)
+        private void PrintCheckboxQuestions()
         {
-            // Если текст задания, кол-во ответов и тип задания совпадают находим в базе это задание
-            var questionFinded = questions.Find(item => item.Text == question.Text
-            && item.QuestionType == question.QuestionType
-            && isAnswersEqual(item.Answers, question.Answers)
-            );
-            if (questionFinded != null)// Если задание существует
+            foreach (var question in CheckboxQuestions)
             {
-                if (questionFinded.QuestionType == QuestionType.Radio)
-                {
-                    questionRadioSet(question, questionFinded);
-                }//Если это радиокнопка
-                else if (questionFinded.QuestionType == QuestionType.Checkbox)
-                {
-                    questionCheckboxSet(question, questionFinded);
-                }//Если это чекбокс
-                
-
-                questionFinded.CalculateCorrectAnswer();//Нормализуем ответы
-
-            }
-            else
-            {
-                questions.Add(question);//Иначе добавляем новое задание в базу
+                question.Print();
             }
         }
         public void Print()
         {
-            foreach (var question in questions)
-            {
-                question.Print();
-                Console.WriteLine();
-            }
+            //PrintSelectQuestions();
+            PrintCheckboxQuestions();
+            Console.WriteLine(CheckboxQuestions[0] == CheckboxQuestions[1]);
         }
         public TasksRepository(string pathExcelFile)
         {
