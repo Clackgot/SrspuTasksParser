@@ -197,6 +197,7 @@ namespace PageDownloaderSharp
             if (selectQuestion1.Answers.Count != selectQuestion2.Answers.Count) return true;
             if (selectQuestion1.Text.ToLower() != selectQuestion2.Text.ToLower()) return true;
 
+
             foreach (var item in selectQuestion1.Answers)
             {
                 if (!(selectQuestion2.Answers.Exists(m2 => m2.Text.ToLower() == item.Text.ToLower())))
@@ -335,6 +336,30 @@ namespace PageDownloaderSharp
             return true;
         }
 
+        public void AddSelectQuestion(SelectQuestion question)
+        {
+            var found = SelectQuestions.Find(item => item == question);
+
+
+            try
+            {
+                bool inNull = object.ReferenceEquals(found, null);
+                if (!inNull)
+                {
+                    found.Update(question);
+                }
+                else
+                {
+                    SelectQuestions.Add(question);
+                }
+            }
+            catch(Exception e)
+            {
+                throw new Exception(e.ToString());
+            }
+
+        }
+
 
         private void LoadSelectQuesions()
         {
@@ -347,15 +372,12 @@ namespace PageDownloaderSharp
             selectQuestion2.Answers.Add(new SelectAnswer(new Tuple<string, string>("наблюдение, самонаблюдение", "психодиагностические методы"), 0.13));
             selectQuestion2.Answers.Add(new SelectAnswer(new Tuple<string, string>("лабораторный, естественный, формирующий эксперименты", "обсервационные методы"), 0.41));
             selectQuestion2.Answers.Add(new SelectAnswer(new Tuple<string, string>("тесты, анкеты, социометрия, интервью, беседа", "экспериментальные методы"), 0.87));
+ 
 
-            SelectQuestion selectQuestion3 = new SelectQuestion("Установите соответствие между примерами и формами культуры");
-            selectQuestion3.Answers.Add(new SelectAnswer(new Tuple<string, string>("наблюдение, самонаблюдение", "экспериментальные методы"), 0.13));
-            selectQuestion3.Answers.Add(new SelectAnswer(new Tuple<string, string>("лабораторный, естественный, формирующий эксперименты", "обсервационные методы"), 0.11));
-            selectQuestion3.Answers.Add(new SelectAnswer(new Tuple<string, string>("тесты, анкеты, социометрия, интервью, беседа", "психодиагностические методы"), 0.87));
 
             SelectQuestions.Add(selectQuestion1);
             SelectQuestions.Add(selectQuestion2);
-            SelectQuestions.Add(selectQuestion3);
+            //SelectQuestions.Add(selectQuestion3);
         }
         private void LoadCheckboxQuestions()
         {
@@ -374,6 +396,7 @@ namespace PageDownloaderSharp
             checkboxQuestion2.Answers.Add(new CheckboxAnswer("дек", 0.55));
             checkboxQuestion2.Answers.Add(new CheckboxAnswer("вектор", 0.55));
 
+            
 
             CheckboxQuestions.Add(checkboxQuestion1);
             CheckboxQuestions.Add(checkboxQuestion2);
@@ -442,13 +465,20 @@ namespace PageDownloaderSharp
         }
         public void Print()
         {
-            //PrintSelectQuestions();
+            PrintSelectQuestions();
             //PrintCheckboxQuestions();
-            PrintRadioQuestions();
+            //PrintRadioQuestions();
         }
         public TasksRepository(string pathExcelFile)
         {
             Load();
+
+            SelectQuestion selectQuestion3 = new SelectQuestion("Установите соответствие между примерами и формами культуры");
+            selectQuestion3.Answers.Add(new SelectAnswer(new Tuple<string, string>("наблюдение, самонаблюдение", "экспериментальные методы"), 0.93));
+            selectQuestion3.Answers.Add(new SelectAnswer(new Tuple<string, string>("лабораторный, естественный, формирующий эксперименты", "обсервационные методы"), 0.91));
+            selectQuestion3.Answers.Add(new SelectAnswer(new Tuple<string, string>("тесты, анкеты, социометрия, интервью, беседа", "психодиагностические методы"), 0.87));
+
+            AddSelectQuestion(selectQuestion3);
         }
     }
 }
