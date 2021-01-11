@@ -27,7 +27,7 @@ namespace PageDownloaderSharp
 
 
             PageModel pageModel = new PageModel(parser.ParseDocument(File.ReadAllText("index.html")));
-            pageModel.printQuestionTypes();
+            pageModel.printAllModelsList();
             //tasksRepository.Print();
         }
     }

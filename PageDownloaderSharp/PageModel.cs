@@ -102,6 +102,8 @@ namespace PageDownloaderSharp
         /// Состояние ответа
         /// </summary>
         public AnswerCondition Condition { get; set; }
+
+        abstract public void Print();
     }
 
     /// <summary>
@@ -109,6 +111,21 @@ namespace PageDownloaderSharp
     /// </summary>
     class RadioAnswerModel : AnswerModel
     {
+        public override void Print()
+        {
+            switch (Condition)
+            {
+                case AnswerCondition.Checked:
+                    Console.WriteLine($"(*){Text}");
+                    break;
+                case AnswerCondition.Unchecked:
+                    Console.WriteLine($"( ){Text}");
+                    break;
+                case AnswerCondition.None:
+                    Console.WriteLine($"(None){Text}");
+                    break;
+            }
+        }
         public RadioAnswerModel(string text, AnswerCondition condition)
         {
             Text = text;
@@ -120,6 +137,21 @@ namespace PageDownloaderSharp
     /// </summary>
     class CheckboxAnswerModel : AnswerModel
     {
+        public override void Print()
+        {
+            switch (Condition)
+            {
+                case AnswerCondition.Checked:
+                    Console.WriteLine($"[v]{Text}");
+                    break;
+                case AnswerCondition.Unchecked:
+                    Console.WriteLine($"[ ]{Text}");
+                    break;
+                case AnswerCondition.None:
+                    Console.WriteLine($"[None]{Text}");
+                    break;
+            }
+        }
         public CheckboxAnswerModel(string text, AnswerCondition condition)
         {
             Text = text;
@@ -131,6 +163,21 @@ namespace PageDownloaderSharp
     /// </summary>
     class SelectAnswerModel : AnswerModel
     {
+        public override void  Print()
+        {
+            switch (Condition)
+            {
+                case AnswerCondition.Checked:
+                    Console.WriteLine($"{Text} [ v {TextOption}]");
+                    break;
+                case AnswerCondition.Unchecked:
+                    Console.WriteLine($"{Text} [ v Не выбрано]");
+                    break;
+                case AnswerCondition.None:
+                    Console.WriteLine($"{Text} [None]");
+                    break;
+            }
+        }
         public string TextOption { get; set; }
         public SelectAnswerModel(string text, string textOption, AnswerCondition condition)
         {
@@ -144,6 +191,21 @@ namespace PageDownloaderSharp
     /// </summary>
     class InputAnswerModel : AnswerModel
     {
+        public override void Print()
+        {
+            switch (Condition)
+            {
+                case AnswerCondition.Checked:
+                    Console.WriteLine($"[{Text}]");
+                    break;
+                case AnswerCondition.Unchecked:
+                    Console.WriteLine($"[Пусто]");
+                    break;
+                case AnswerCondition.None:
+                    Console.WriteLine($"[None]");
+                    break;
+            }
+        }
         public InputAnswerModel(string text, AnswerCondition condition)
         {
             Text = text;
@@ -155,7 +217,7 @@ namespace PageDownloaderSharp
     /// Шаблонная модель задания с типом задания T
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    class QuestionModel<T>
+    class QuestionModel<T> where T: AnswerModel
     {
         /// <summary>
         /// Текст задания
@@ -174,6 +236,15 @@ namespace PageDownloaderSharp
         /// Список ответов на задание
         /// </summary>
         public List<T> Answers { get; set; } = new List<T>();
+
+        public void Print()
+        {
+            Console.WriteLine(Text);
+            foreach (var item in Answers)
+            {
+                item.Print();
+            }
+        }
         /// <summary>
         /// Конструктор класса
         /// </summary>
@@ -200,12 +271,44 @@ namespace PageDownloaderSharp
         public List<QuestionModel<InputAnswerModel>> inputQuestions = new List<QuestionModel<InputAnswerModel>>();
         public List<QuestionModel<SelectAnswerModel>> selectQuestions = new List<QuestionModel<SelectAnswerModel>>();
 
-        public void printQuestionTypes()
+        public void printAllModelsList()
         {
-            Console.WriteLine($"Radios: {radioQuestions.Count}");
-            Console.WriteLine($"Checkboxes: {checkboxQuestions.Count}");
-            Console.WriteLine($"Inputs: {inputQuestions.Count}");
-            Console.WriteLine($"Selects: {selectQuestions.Count}");
+            int questionNumber = 0;
+            foreach (var item in radioQuestions)
+            {
+                string header = String.Format("------------------------------------------Radio#{0:d3}----------------------------------------------", questionNumber);
+                Console.WriteLine(header);
+                item.Print();
+                Console.WriteLine();
+                questionNumber++;
+            }
+            questionNumber = 0;
+            foreach (var item in checkboxQuestions)
+            {
+                string header = String.Format("---------------------------------------Checkbox#{0:d3}----------------------------------------------", questionNumber);
+                Console.WriteLine(header);
+                item.Print();
+                Console.WriteLine();
+                questionNumber++;
+            }
+            questionNumber = 0;
+            foreach (var item in inputQuestions)
+            {
+                string header = String.Format("------------------------------------------Input#{0:d3}----------------------------------------------", questionNumber);
+                Console.WriteLine(header);
+                item.Print();
+                Console.WriteLine();
+                questionNumber++;
+            }
+            questionNumber = 0;
+            foreach (var item in selectQuestions)
+            {
+                string header = String.Format("-----------------------------------------Select#{0:d3}----------------------------------------------", questionNumber);
+                Console.WriteLine(header);
+                item.Print();
+                Console.WriteLine();
+                questionNumber++;
+            }
         }
 
         /// <summary>
@@ -299,18 +402,14 @@ namespace PageDownloaderSharp
         private void setQuestions()
         {
             var answersDiv = document.QuerySelectorAll("div.qtext");//Блоки заданий
-            int questionNumber = 1;//Номер теста
+            //int questionNumber = 1;//Номер теста
             foreach (var answerDiv in answersDiv)
             {
                 
                 var questionText = answerDiv.TextContent.Replace("\n", " ");//Замена переноса строк на пробел
                 questionText = Regex.Replace(questionText, @"([ ]){2,}", @" ");//Удаление повторяющихся пробелов
-
-                
-
-                string header = String.Format("------------------------------------------------{0:d3}----------------------------------------------", questionNumber);
-                Console.WriteLine(header);
-                Console.WriteLine($"{questionText}");
+                //string header = String.Format("------------------------------------------------{0:d3}----------------------------------------------", questionNumber);
+                //Console.WriteLine(header);
                 switch (getQuestionType(answerDiv))
                 {
                     case QuestionType.Radio:
@@ -318,7 +417,7 @@ namespace PageDownloaderSharp
                         foreach (var item in answerDiv.ParentElement.QuerySelectorAll("label"))
                         {
                             item.RemoveElement(item.QuerySelector("span"));
-                            Console.WriteLine($"  ( ) {item.TextContent}");
+                            //Console.WriteLine($"  ( ) {item.TextContent}");
                             tempRadioQuestion.Answers.Add(new RadioAnswerModel(item.TextContent, AnswerCondition.None));
                         }
                         radioQuestions.Add(tempRadioQuestion);
@@ -327,7 +426,7 @@ namespace PageDownloaderSharp
                         var tempInputQuestion = new QuestionModel<InputAnswerModel>(questionText, QuestionType.Input, QuestionCondition.None);
                         foreach (var item in answerDiv.ParentElement.QuerySelectorAll("input[id*=answer]"))
                         {
-                            Console.WriteLine($"  [{item.GetAttribute("value")}]");
+                            //Console.WriteLine($"  [{item.GetAttribute("value")}]");
                             tempInputQuestion.Answers.Add(new InputAnswerModel(item.GetAttribute("value"), AnswerCondition.None));
                         }
                         inputQuestions.Add(tempInputQuestion);
@@ -337,7 +436,7 @@ namespace PageDownloaderSharp
                         foreach (var item in answerDiv.ParentElement.QuerySelectorAll("label"))
                         {
                             item.RemoveElement(item.QuerySelector("span"));
-                            Console.WriteLine($"  [ ] {item.TextContent}");
+                            //Console.WriteLine($"  [ ] {item.TextContent}");
                             tempCheckboxQuestion.Answers.Add(new CheckboxAnswerModel(item.TextContent, AnswerCondition.None));
                         }
                         checkboxQuestions.Add(tempCheckboxQuestion);
@@ -349,18 +448,18 @@ namespace PageDownloaderSharp
                         {
                             var text = item.QuerySelector("p").TextContent;
                             var optionText = item.QuerySelector("option[selected=selected]").TextContent;
-                            Console.Write($"  {text} ");
-                            Console.WriteLine($"[ v {optionText}]");
+                            //Console.Write($"  {text} ");
+                            //Console.WriteLine($"[ v {optionText}]");
                             tempSelectQuestion.Answers.Add(new SelectAnswerModel(text, optionText, AnswerCondition.None));
                         }
                         selectQuestions.Add(tempSelectQuestion);
                         break;
                     case QuestionType.None:
-                        Console.WriteLine("Неизвестный тип задания");
+                        //Console.WriteLine("Неизвестный тип задания");
                         throw new Exception("Неизвестный тип задания");
                 }
-                Console.WriteLine();
-                questionNumber++;
+                //Console.WriteLine();
+                //questionNumber++;
             }
         }
         /// <summary>
