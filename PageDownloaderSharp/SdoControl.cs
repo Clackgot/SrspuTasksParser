@@ -1,6 +1,8 @@
-﻿using AngleSharp.Html.Parser;
+﻿using AngleSharp.Html.Dom;
+using AngleSharp.Html.Parser;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -16,7 +18,7 @@ namespace PageDownloaderSharp
         /// Осуществляет GET/POST/... запросы и сохраняет куки, 
         /// и настройки headers на протяжении своего существования
         /// </summary>
-        public HttpClient Client;
+        private HttpClient Client;
         /// <summary>
         /// Куки получаемый при первом подключении
         /// </summary>
@@ -32,7 +34,7 @@ namespace PageDownloaderSharp
         /// <summary>
         /// Парсер HTML кода
         /// </summary>
-        public HtmlParser Parser;
+        private HtmlParser Parser;
         /// <summary>
         /// Конструктор основного класса приложения
         /// </summary>
@@ -50,7 +52,7 @@ namespace PageDownloaderSharp
             StartUpInit().GetAwaiter().GetResult();
             LoginAsync().GetAwaiter().GetResult();
         }
-        public void ClientInit()
+        private void ClientInit()
         {
             Client.BaseAddress = new Uri(Url);
             Client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
@@ -68,7 +70,7 @@ namespace PageDownloaderSharp
         /// инициализирующий токен <see cref="SdoControl.LoginToken">LoginToken</see> и сессионную cookie <see cref="SdoControl.MoodleSession">MoodleSession</see>
         /// </summary>
         /// <returns></returns>
-        public async Task StartUpInit()
+        private async Task StartUpInit()
         {
             HttpResponseMessage responseMessage = await Client.GetAsync(Url);//GET запрос, и его запись в переменную
             var html = await responseMessage.Content.ReadAsStringAsync();//Содержимое ответа(документ)
@@ -84,7 +86,7 @@ namespace PageDownloaderSharp
         /// POST запрос с проверкой на валидность логина пароля
         /// </summary>
         /// <returns></returns>
-        public async Task LoginAsync()
+        private async Task LoginAsync()
         {
             ///Собираем содержимое тела POST запроса
             var content = new FormUrlEncodedContent(new[]
@@ -116,10 +118,35 @@ namespace PageDownloaderSharp
         public AngleSharp.Html.Dom.IHtmlDocument GetPage(string url)
         {
             HttpResponseMessage responseMessage = Client.GetAsync(url).GetAwaiter().GetResult();//GET запрос, и его запись в переменную
-            var html = responseMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();//Содержимое ответа(документ)
-            var document = Parser.ParseDocument(html);//Создание документа для парсинга
-            return document;
+            if(responseMessage.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                var html = responseMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();//Содержимое ответа(документ)
+                var document = Parser.ParseDocument(html);//Создание документа для парсинга
+                return document;
+            }
+            else if(responseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                throw new Exception("Ошибка 404. Ресурс не существует");
+            }
+            return null;
         }
+
+        public void SavePage(string url)
+        {
+            HttpResponseMessage responseMessage = Client.GetAsync(url).GetAwaiter().GetResult();//GET запрос, и его запись в переменную
+            if (responseMessage.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                var html = responseMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();//Содержимое ответа(документ)
+                var path = @"index.html";
+
+                File.WriteAllText(path, html);
+            }
+            else if (responseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                throw new Exception("Ошибка 404. Ресурс не существует");
+            }
+        }
+
 
     }
 }
