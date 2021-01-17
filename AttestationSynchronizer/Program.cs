@@ -3,7 +3,6 @@ using AngleSharp.Html.Parser;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -153,10 +152,10 @@ namespace AttestationSynchronizer
                     new KeyValuePair<string, string>("DXCss", formModel.dxCss),
             });
             var response = await client.PostAsync(loginPageUrl, content);
-            File.WriteAllText("index.html", response.Content.ReadAsStringAsync().GetAwaiter().GetResult(), Encoding.UTF8);
-            Console.WriteLine(response);
+            //File.WriteAllText("index.html", response.Content.ReadAsStringAsync().GetAwaiter().GetResult(), Encoding.UTF8);
+            //Console.WriteLine(response);
             var vedResponse = client.GetAsync("https://dec.srspu.ru/Ved/").GetAwaiter().GetResult();
-            File.WriteAllText("ved.html", vedResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult(), Encoding.UTF8);
+            //File.WriteAllText("ved.html", vedResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult(), Encoding.UTF8);
             return response;
         }
 
@@ -177,17 +176,81 @@ namespace AttestationSynchronizer
             }
             return document;
         }
+        public async Task<IHtmlDocument> GetPageAsync(string url)
+        {
+            var response = await client.GetAsync(url);
+            var html = await response.Content.ReadAsStringAsync();
+            var document = parser.ParseDocument(html);//Создание документа для парсинга
+            if (document.QuerySelector("#ctl00_MainContent_ucLoginFormPage_lblError") != null)
+            {
+                throw new Exception("Неправильный логин или пароль");
+            }
+            return document;
+        }
 
     }
 
-        class Program
+    class Program
+    {
+        private static void AsyncRequestions(UserConnect userConnect,int count)
         {
+            List<Task<IHtmlDocument>> tasks = new List<Task<IHtmlDocument>>();
 
-            static void Main(string[] args)
+            for (int i = 0; i < count; i++)
+                tasks.Add(userConnect.GetPageAsync("https://dec.srspu.ru/Ved/Ved.aspx?id=57400"));
+
+            Task.WaitAll(tasks.ToArray());
+        }
+
+        private static void SyncRequestions(UserConnect userConnect, int count)
+        {
+            for (int i = 0; i < count; i++)
+                userConnect.GetPage("https://dec.srspu.ru/Ved/Ved.aspx?id=57400");
+        }
+
+        public static void TestMethods(UserConnect userConnect, int countTest, int methodCount = 10)
+        {
+            Console.WriteLine($"Запущено {countTest} тестов для синхронного и асинхронного методов, которые выполнят по {methodCount} GET-запросов");
+            System.Diagnostics.Stopwatch myStopwatch = new System.Diagnostics.Stopwatch();
+            double syncTimeSum = 0;
+            double asyncTimeSum = 0;
+            for (int i = 0; i < countTest; i++)
             {
+                double syncTime;
+                double asyncTime;
+                myStopwatch.Start();
+                SyncRequestions(userConnect, methodCount);
+                myStopwatch.Stop();
+                syncTime = myStopwatch.Elapsed.TotalSeconds;
+                myStopwatch.Restart();
+                AsyncRequestions(userConnect, methodCount);
+                myStopwatch.Stop();
+                asyncTime = myStopwatch.Elapsed.TotalSeconds;
+                Console.WriteLine($"({i+1}/{countTest}). Синхронно: {syncTime} сек. Асинхронно: {asyncTime} сек.");
+                syncTimeSum += syncTime;
+                asyncTimeSum += asyncTime;
+            }
+            double avSync = syncTimeSum / countTest;
+            double avAsync = asyncTimeSum / countTest;
+            Console.WriteLine("--------------------------------");
+            Console.WriteLine($"Среднее время синхронного метода: {avSync} сек.");
+            Console.WriteLine($"Среднее время асинхронного метода: {avAsync} сек.");
+            double delta = avSync - avAsync;
+            Console.WriteLine($"Асинронный метод в среднем быстрее на {delta} сек.");
+
+
+        }
+
+        static void Main(string[] args)
+        {
             //var summary = BenchmarkRunner.Run<Test>();
             UserConnect userConnect = new UserConnect("clackgot@gmail.com", "31160xs1");
+            Console.Write("Тестов:");
+            var testCount = int.Parse(Console.ReadLine());
+            Console.Write("Запросов:");
+            var reqCount = int.Parse(Console.ReadLine());
+            TestMethods(userConnect, testCount, reqCount);
             //Test test = new Test(3);
-            }
         }
     }
+}
