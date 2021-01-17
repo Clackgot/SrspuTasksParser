@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PageDownloaderSharp", "PageDownloaderSharp\PageDownloaderSharp.csproj", "{593A88B0-477A-4DD3-AA4D-0A242A8F684F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttestationSynchronizer", "AttestationSynchronizer\AttestationSynchronizer.csproj", "{45ECB2D6-CF39-4884-A11B-704B1F6A6473}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{593A88B0-477A-4DD3-AA4D-0A242A8F684F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{593A88B0-477A-4DD3-AA4D-0A242A8F684F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{593A88B0-477A-4DD3-AA4D-0A242A8F684F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45ECB2D6-CF39-4884-A11B-704B1F6A6473}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45ECB2D6-CF39-4884-A11B-704B1F6A6473}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45ECB2D6-CF39-4884-A11B-704B1F6A6473}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45ECB2D6-CF39-4884-A11B-704B1F6A6473}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

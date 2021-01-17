@@ -105,7 +105,6 @@ namespace PageDownloaderSharp
 
         abstract public void Print();
     }
-
     /// <summary>
     /// Модель ответа на задание с радиокнопками
     /// </summary>
@@ -212,7 +211,6 @@ namespace PageDownloaderSharp
             Condition = condition;
         }
     }
-
     /// <summary>
     /// Шаблонная модель задания с типом задания T
     /// </summary>
@@ -271,8 +269,15 @@ namespace PageDownloaderSharp
         public List<QuestionModel<InputAnswerModel>> inputQuestions = new List<QuestionModel<InputAnswerModel>>();
         public List<QuestionModel<SelectAnswerModel>> selectQuestions = new List<QuestionModel<SelectAnswerModel>>();
 
-        public void printAllModelsList()
+        private bool isTestFinished()
         {
+            return object.ReferenceEquals(document.QuerySelector("a.endtestlink"), null);
+        }
+
+        public void Print()
+        {
+            PageModelLogger logger = new PageModelLogger(this);
+            logger.Print();
             int questionNumber = 0;
             foreach (var item in radioQuestions)
             {
@@ -352,6 +357,7 @@ namespace PageDownloaderSharp
         /// </summary>
         private void initGeneralInfo()
         {
+            if (!isTestFinished()) throw new Exception("Тест ещё не закончен");
             setDescipline();
             setTestName();
             setMark();
@@ -416,9 +422,12 @@ namespace PageDownloaderSharp
                         var tempRadioQuestion = new QuestionModel<RadioAnswerModel>(questionText, QuestionType.Radio, QuestionCondition.None);
                         foreach (var item in answerDiv.ParentElement.QuerySelectorAll("label"))
                         {
+                            var input = item.ParentElement.QuerySelector("input").GetAttribute("checked");
+                            AnswerCondition answerCondition = AnswerCondition.None;
+                            if (input == "checked") answerCondition = AnswerCondition.Checked;
+                            else answerCondition = AnswerCondition.Unchecked;
                             item.RemoveElement(item.QuerySelector("span"));
-                            //Console.WriteLine($"  ( ) {item.TextContent}");
-                            tempRadioQuestion.Answers.Add(new RadioAnswerModel(item.TextContent, AnswerCondition.None));
+                            tempRadioQuestion.Answers.Add(new RadioAnswerModel(item.TextContent, answerCondition));
                         }
                         radioQuestions.Add(tempRadioQuestion);
                         break;
@@ -426,8 +435,11 @@ namespace PageDownloaderSharp
                         var tempInputQuestion = new QuestionModel<InputAnswerModel>(questionText, QuestionType.Input, QuestionCondition.None);
                         foreach (var item in answerDiv.ParentElement.QuerySelectorAll("input[id*=answer]"))
                         {
-                            //Console.WriteLine($"  [{item.GetAttribute("value")}]");
-                            tempInputQuestion.Answers.Add(new InputAnswerModel(item.GetAttribute("value"), AnswerCondition.None));
+                            var input = item.ParentElement.QuerySelector("input").GetAttribute("value");
+                            AnswerCondition answerCondition = AnswerCondition.None;
+                            if (input.Length > 0 ) answerCondition = AnswerCondition.Checked;
+                            else answerCondition = AnswerCondition.Unchecked;
+                            tempInputQuestion.Answers.Add(new InputAnswerModel(item.GetAttribute("value"), answerCondition));
                         }
                         inputQuestions.Add(tempInputQuestion);
                         break;
@@ -435,9 +447,12 @@ namespace PageDownloaderSharp
                         var tempCheckboxQuestion = new QuestionModel<CheckboxAnswerModel>(questionText, QuestionType.Checkbox, QuestionCondition.None);
                         foreach (var item in answerDiv.ParentElement.QuerySelectorAll("label"))
                         {
+                            var input = item.ParentElement.QuerySelector("input").GetAttribute("checked");
+                            AnswerCondition answerCondition = AnswerCondition.None;
+                            if (input == "checked") answerCondition = AnswerCondition.Checked;
+                            else answerCondition = AnswerCondition.Unchecked;
                             item.RemoveElement(item.QuerySelector("span"));
-                            //Console.WriteLine($"  [ ] {item.TextContent}");
-                            tempCheckboxQuestion.Answers.Add(new CheckboxAnswerModel(item.TextContent, AnswerCondition.None));
+                            tempCheckboxQuestion.Answers.Add(new CheckboxAnswerModel(item.TextContent, answerCondition));
                         }
                         checkboxQuestions.Add(tempCheckboxQuestion);
                         break;
@@ -446,20 +461,24 @@ namespace PageDownloaderSharp
 
                         foreach (var item in answerDiv.ParentElement.QuerySelectorAll("tr[class*=r]"))
                         {
+                            AnswerCondition answerCondition = AnswerCondition.None;
+                            if (item.QuerySelector("option[selected=selected]").GetAttribute("value") == "0")
+                            {
+                                answerCondition = AnswerCondition.Unchecked;
+                            }
+                            else
+                            {
+                                answerCondition = AnswerCondition.Checked;
+                            }
                             var text = item.QuerySelector("p").TextContent;
                             var optionText = item.QuerySelector("option[selected=selected]").TextContent;
-                            //Console.Write($"  {text} ");
-                            //Console.WriteLine($"[ v {optionText}]");
-                            tempSelectQuestion.Answers.Add(new SelectAnswerModel(text, optionText, AnswerCondition.None));
+                            tempSelectQuestion.Answers.Add(new SelectAnswerModel(text, optionText, answerCondition));
                         }
                         selectQuestions.Add(tempSelectQuestion);
                         break;
                     case QuestionType.None:
-                        //Console.WriteLine("Неизвестный тип задания");
                         throw new Exception("Неизвестный тип задания");
                 }
-                //Console.WriteLine();
-                //questionNumber++;
             }
         }
         /// <summary>
@@ -470,26 +489,6 @@ namespace PageDownloaderSharp
         {
             this.document = document;
             initGeneralInfo();
-
-            PageModelLogger logger = new PageModelLogger(this);
-            logger.Print();
-            WriteAllTextQuestionToFile(document);
-
-        }
-        /// <summary>
-        /// Записывает текст заданий в файл
-        /// </summary>
-        /// <param name="htmlDocument">HTML-содержимое страницы теста</param>
-        private static void WriteAllTextQuestionToFile(IHtmlDocument htmlDocument)
-        {
-            List<string> lines = new List<string>();
-            foreach (var item in htmlDocument.QuerySelectorAll("div.qtext"))
-            {
-                var line = item.TextContent.Replace("\n", " ");
-                line = Regex.Replace(line, @"([ ]){2,}", @" ");
-                lines.Add(line);
-            }
-            File.WriteAllLines("data.txt", lines.ToArray());
         }
     }
     /// <summary>
@@ -525,32 +524,32 @@ namespace PageDownloaderSharp
         /// </summary>
         private void printMark()
         {
-            if (model.Mark > 0) Console.WriteLine($"Mark: {model.Mark}/100");
-            else Console.WriteLine($"Mark: None");
+            if (model.Mark > 0) Console.WriteLine($"Баллов: {model.Mark}/100");
+            else Console.WriteLine($"Баллов: None");
         }
         /// <summary>
         /// Выводит количество заданий в тесте
         /// </summary>
         private void printQuestionCount()
         {
-            if (model.QuestionCount > 0) Console.WriteLine($"AnswersCount: {model.QuestionCount}");
-            else Console.WriteLine($"AnswersCount: 0");
+            if (model.QuestionCount > 0) Console.WriteLine($"Заданий: {model.QuestionCount}");
+            else Console.WriteLine($"Заданий: 0");
         }
         /// <summary>
         /// Выводит название теста
         /// </summary>
         private void printTestName()
         {
-            if (model.TestName.Length > 0 && model.TestName != null) Console.WriteLine($"TestName: {model.TestName}");
-            else Console.WriteLine($"TestName: None");
+            if (model.TestName.Length > 0 && model.TestName != null) Console.WriteLine($"Тест: {model.TestName}");
+            else Console.WriteLine($"Тест: None");
         }
         /// <summary>
         /// Выводит название предмета
         /// </summary>
         private void printDiscipline()
         {
-            if (model.Discipline.Length > 0 && model.Discipline != null) Console.WriteLine($"Discipline: {model.Discipline}");
-            else Console.WriteLine($"Discipline: None");
+            if (model.Discipline.Length > 0 && model.Discipline != null) Console.WriteLine($"Предмет: {model.Discipline}");
+            else Console.WriteLine($"Предмет: None");
         }
     }
 }
