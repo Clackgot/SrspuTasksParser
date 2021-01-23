@@ -212,7 +212,6 @@ namespace AttestationSynchronizer
         private string year;
         private string hours;
         private string semester;
-        private string dateUpdate;
         private string computer;
         private string saveCount;
 
@@ -226,7 +225,6 @@ namespace AttestationSynchronizer
         public string Year { get => year; private set => year = value; }
         public string Hours { get => hours; private set => hours = value; }
         public string Semester { get => semester; private set => semester = value; }
-        public string DateUpdate { get => dateUpdate; private set => dateUpdate = value; }
         public string Computer { get => computer; private set => computer = value; }
         public string SaveCount { get => saveCount; private set => saveCount = value; }
         public List<Student> Students { get => students; set => students = value; }
@@ -245,7 +243,6 @@ namespace AttestationSynchronizer
             Year = document.QuerySelector("span#ctl00_MainContent_ucVedBox_lblYear").TextContent;
             Hours = document.QuerySelector("span#ctl00_MainContent_ucVedBox_lblHours").TextContent;
             Semester = document.QuerySelector("span#ctl00_MainContent_ucVedBox_lblSem").TextContent;
-            DateUpdate = document.QuerySelector("span#ctl00_MainContent_ucVedBox_lblDateUpdate").TextContent;
             Computer = document.QuerySelector("span#ctl00_MainContent_ucVedBox_lblLastUser").TextContent;
             SaveCount = document.QuerySelector("span#ctl00_MainContent_ucVedBox_lblSaveCount").TextContent;
         }

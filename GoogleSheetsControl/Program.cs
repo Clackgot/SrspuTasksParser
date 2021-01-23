@@ -51,16 +51,37 @@ namespace GoogleSheetsControl
             return spreadsheet;
         }
 
-
-        public void SendData(string spreadSheetId, List<List<string>> data, string sheetName)
+        public void SendDisciplineInfo(string spreadSheetId, Discipline discipline, string sheetName)
         {
+            SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;  // Значение не будет парситься перед записью
+            ValueRange valueRange = new ValueRange();// Данные для отправки в таблицу
+            valueRange.MajorDimension = "COLUMNS";
+            var tempData = new List<IList<object>>(); //Подготавлемые данные для отправки в таблицу
+            tempData.Add(new List<object>() {
+                discipline.Status,
+                discipline.ExamType,
+                discipline.Group,
+                discipline.Department,
+                discipline.Name,
+                discipline.Teacher,
+                discipline.Course,
+                discipline.SaveCount,
+            });
+            valueRange.Values = tempData;//Добавление подготовленных данных для Update запроса
+            SpreadsheetsResource.ValuesResource.UpdateRequest request = sheetsService.Spreadsheets.Values.Update(valueRange, spreadSheetId, $"{sheetName}!W3:W11");//Доступная область редактирования
+            request.ValueInputOption = valueInputOption;//Опция ввода (на самом деле хз что это)
+            UpdateValuesResponse response = request.Execute(); //Запрос
+        }
+
+        public void SendData(string spreadSheetId, Discipline discipline, string sheetName)
+        {
+            clearSheetSubject(spreadSheetId, 30);
             SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;  // Значение не будет парситься перед записью
             ValueRange valueRange = new ValueRange();// Данные для отправки в таблицу
             valueRange.MajorDimension = "ROWS";//ROWS / COLUMNS
             var tempData = new List<IList<object>>(); //Подготавлемые данные для отправки в таблицу
-            Random rnd = new Random();
 
-            foreach (var row in data)
+            foreach (var row in discipline.GetData())
             {
                 List<object> tempRow = new List<object>();
                 foreach (var cell in row)
@@ -75,6 +96,8 @@ namespace GoogleSheetsControl
             SpreadsheetsResource.ValuesResource.UpdateRequest request = sheetsService.Spreadsheets.Values.Update(valueRange, spreadSheetId, $"{sheetName}!A3:U");//Доступная область редактирования
             request.ValueInputOption = valueInputOption;//Опция ввода (на самом деле хз что это)
             UpdateValuesResponse response = request.Execute(); //Запрос
+            SendDisciplineInfo(spreadSheetId, discipline, discipline.Name);
+
             Console.WriteLine($"Обновлён лист {sheetName}");
         }
 
@@ -171,7 +194,7 @@ namespace GoogleSheetsControl
             initDecLoader();
             foreach (var discipline in loader.disciplines)
             {
-                control.SendData(spreadsheatId, discipline.GetData(), discipline.Name);
+                control.SendData(spreadsheatId, discipline, discipline.Name);
             }
 
         }
