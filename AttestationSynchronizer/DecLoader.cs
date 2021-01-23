@@ -369,18 +369,27 @@ namespace AttestationSynchronizer
         {
 
             List<Task> tasks = new List<Task>();
+            Task task1 = null;
             foreach (var user in users)
             {
                 try
                 {
-                    tasks.Add(AddStudent(links, user));
+                    task1 = AddStudent(links, user);
+                    
                 }
+                
                 catch (Exception e)
                 {
                     Console.WriteLine($"Ошибка при загрузке пользователя {user.Login}");
                 }
-                Task.WaitAll(tasks.ToArray());
+                finally
+                {
+                    tasks.Add(task1);
+                }
+                
+                
             }
+            Task.WaitAll(tasks.ToArray());
 
 
         }

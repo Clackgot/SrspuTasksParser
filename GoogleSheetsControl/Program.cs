@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace GoogleSheetsControl
 {
@@ -51,7 +52,7 @@ namespace GoogleSheetsControl
             return spreadsheet;
         }
 
-        public void SendDisciplineInfo(string spreadSheetId, Discipline discipline, string sheetName)
+        public async Task SendDisciplineInfo(string spreadSheetId, Discipline discipline, string sheetName)
         {
             SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;  // Значение не будет парситься перед записью
             ValueRange valueRange = new ValueRange();// Данные для отправки в таблицу
@@ -70,12 +71,12 @@ namespace GoogleSheetsControl
             valueRange.Values = tempData;//Добавление подготовленных данных для Update запроса
             SpreadsheetsResource.ValuesResource.UpdateRequest request = sheetsService.Spreadsheets.Values.Update(valueRange, spreadSheetId, $"{sheetName}!W3:W11");//Доступная область редактирования
             request.ValueInputOption = valueInputOption;//Опция ввода (на самом деле хз что это)
-            UpdateValuesResponse response = request.Execute(); //Запрос
+            UpdateValuesResponse response = await request.ExecuteAsync(); //Запрос
         }
 
-        public void SendData(string spreadSheetId, Discipline discipline, string sheetName)
+        public async Task SendData(string spreadSheetId, Discipline discipline, string sheetName)
         {
-            clearSheetSubject(spreadSheetId, 30);
+            await clearSheetSubject(spreadSheetId, sheetName, 30);
             SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;  // Значение не будет парситься перед записью
             ValueRange valueRange = new ValueRange();// Данные для отправки в таблицу
             valueRange.MajorDimension = "ROWS";//ROWS / COLUMNS
@@ -95,15 +96,15 @@ namespace GoogleSheetsControl
 
             SpreadsheetsResource.ValuesResource.UpdateRequest request = sheetsService.Spreadsheets.Values.Update(valueRange, spreadSheetId, $"{sheetName}!A3:U");//Доступная область редактирования
             request.ValueInputOption = valueInputOption;//Опция ввода (на самом деле хз что это)
-            UpdateValuesResponse response = request.Execute(); //Запрос
-            SendDisciplineInfo(spreadSheetId, discipline, discipline.Name);
+            UpdateValuesResponse response = await request.ExecuteAsync(); //Запрос
+            await SendDisciplineInfo(spreadSheetId, discipline, discipline.Name);
 
             Console.WriteLine($"Обновлён лист {sheetName}");
         }
 
 
 
-        private void clearSheetSubject(string sheetId, int lines)
+        private async Task clearSheetSubject(string sheetId, string sheetName, int lines)
         {
             SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;  // TODO: Update placeholder value.
 
@@ -122,9 +123,9 @@ namespace GoogleSheetsControl
                 tempData.Add(tempList);
             }
             valueRange.Values = tempData;
-            SpreadsheetsResource.ValuesResource.UpdateRequest request = sheetsService.Spreadsheets.Values.Update(valueRange, sheetId, $"Шаблон!A3:U");//Доступная область редактирования
+            SpreadsheetsResource.ValuesResource.UpdateRequest request = sheetsService.Spreadsheets.Values.Update(valueRange, sheetId, $"{sheetName}!A3:U");//Доступная область редактирования
             request.ValueInputOption = valueInputOption;//Опция ввода (на самом деле хз что это)
-            UpdateValuesResponse response = request.Execute(); //Запрос
+            UpdateValuesResponse response = await request.ExecuteAsync(); //Запрос
         }
 
         /// <summary>
@@ -188,14 +189,22 @@ namespace GoogleSheetsControl
         };
             loader = new DecLoader(users);
         }
+
+        private async Task sendDiscipline(Discipline discipline)
+        {
+            await control.SendData(spreadsheatId, discipline, discipline.Name);
+        }
+
         public Storage()
         {
             control = new GSControl();
             initDecLoader();
+            List<Task> tasks = new List<Task>();
             foreach (var discipline in loader.disciplines)
             {
-                control.SendData(spreadsheatId, discipline, discipline.Name);
+                tasks.Add(sendDiscipline(discipline));
             }
+            Task.WaitAll(tasks.ToArray());
 
         }
     }
