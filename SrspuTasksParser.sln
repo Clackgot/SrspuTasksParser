@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PageDownloaderSharp", "Page
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttestationSynchronizer", "AttestationSynchronizer\AttestationSynchronizer.csproj", "{45ECB2D6-CF39-4884-A11B-704B1F6A6473}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoogleSheetsControl", "GoogleSheetsControl\GoogleSheetsControl.csproj", "{60141DEC-ACE1-4340-93A6-7A37FC9B0B49}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{45ECB2D6-CF39-4884-A11B-704B1F6A6473}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45ECB2D6-CF39-4884-A11B-704B1F6A6473}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45ECB2D6-CF39-4884-A11B-704B1F6A6473}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60141DEC-ACE1-4340-93A6-7A37FC9B0B49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60141DEC-ACE1-4340-93A6-7A37FC9B0B49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60141DEC-ACE1-4340-93A6-7A37FC9B0B49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60141DEC-ACE1-4340-93A6-7A37FC9B0B49}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
