@@ -19,7 +19,6 @@ namespace GoogleSheetsControl
         private SheetsService sheetsService; //Сервис Google Sheets
         public bool needClearWhenWriteed = true;
 
-        DecLoader loader;
         /// <summary>
         /// Конструктор класса Google Sheets Control
         /// </summary>
@@ -28,15 +27,6 @@ namespace GoogleSheetsControl
         {
             this.applicationName = applicationName;
             initSheetsService();
-            //clearSheetSubject("1bJFruzClSZcpuoUWXxOfJGJQ-l3Dt0DWXA4GHJDrgDw", 30);
-            //PostSheetSubjectUsers("1bJFruzClSZcpuoUWXxOfJGJQ-l3Dt0DWXA4GHJDrgDw", new List<List<string>>() { 
-            //new List<string>(){"qwe", "привет", "sfsdf12" },
-            //new List<string>(){"231", "43", "434" },
-            //new List<string>(){"8678", "zxc", "43xx4" },
-            //new List<string>(){"11111", "321", "123" },
-
-            //}, "Математика");
-
         }
         /// <summary>
         /// Возвращает таблицу по заданному ID
@@ -170,23 +160,21 @@ namespace GoogleSheetsControl
     }
 
 
-    class Storage
+    public class Storage
     {
         public string spreadsheatId = "1bJFruzClSZcpuoUWXxOfJGJQ-l3Dt0DWXA4GHJDrgDw";//ID таблицы
         GSControl control; //Получение и сохранение таблиц Google Sheets
         DecLoader loader;
+        List<(string, string)> loginsAndParsswords;
 
-        private void initDecLoader()
+        private void initDecLoader(List<(string, string)> loginsAndParsswords)
         {
-            List<User> users = new List<User>()
-        {
-            new User("clackgot@gmail.com", "31160xs1"),
-            new User("samarkin20022002@gmail.com", "q54541c8"),
-            new User("dmitry.kurochkin66@gmail.com", "74a5y2e3"),
-            new User("ouskornikov@mail.ru", "5ddjyii4"),
-            new User("paaa01@bk.ru", "jt1s83q1"),
-            new User("nivadan@inbox.ru", "72s87eli"),
-        };
+
+            List<User> users = new List<User>();
+            foreach (var item in loginsAndParsswords)
+            {
+                users.Add(new User(item.Item1, item.Item2));
+            }
             loader = new DecLoader(users);
         }
 
@@ -195,30 +183,63 @@ namespace GoogleSheetsControl
             await control.SendData(spreadsheatId, discipline, discipline.Name);
         }
 
-        public Storage()
+        public Storage(List<(string, string)> loginsAndParsswords)
         {
-            control = new GSControl();
-            initDecLoader();
+
+            control = new GSControl("SrspuDecParser");
+
+            initDecLoader(loginsAndParsswords);
             List<Task> tasks = new List<Task>();
             foreach (var discipline in loader.disciplines)
             {
                 tasks.Add(sendDiscipline(discipline));
             }
             Task.WaitAll(tasks.ToArray());
-
         }
     }
 
 
-
+    
 
 
     class Program
     {
+        public static void Run()
+        {
+            Console.WriteLine("В папке с программой необходимо иметь файл passwords.txt с логинами и паролями от ved.srspu.ru");
+            Console.WriteLine("В таком формате:");
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine("obama@yandex.ru parolObamy228");
+            Console.WriteLine("putin@gmail.com pass2123123");
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine();
+            Console.WriteLine("Для продолжения нажмите любую клавишу");
+            Console.ReadKey();
+            string[] lines;
+            try
+            {
+                lines = File.ReadAllLines("passwords.txt");
+            }
+            catch
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Ошибка при попытке загрузки файла с паролями.");
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.ReadKey();
+                return;
+            }
+            List<(string, string)> passwords = new List<(string, string)>();
+            foreach (var line in lines)
+            {
+                passwords.Add((line.Split(' ')[0], line.Split(' ')[1]));
+            }
+
+            Storage storage = new Storage(passwords);
+        }
         static void Main(string[] args)
         {
-            //GSControl control = new GSControl();
-            Storage storage = new Storage();
+            Run();
         }
     }
 }

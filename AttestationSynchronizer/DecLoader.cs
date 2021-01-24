@@ -327,6 +327,7 @@ namespace AttestationSynchronizer
 
         private async Task initDisciplines()
         {
+            Console.WriteLine("Попытка инициализации дисциплин...");
             try
             {
                 disciplinesLinks = new List<string>();
@@ -347,22 +348,11 @@ namespace AttestationSynchronizer
                     AddDispline(new Discipline(page.Result));
                 }
             }
-            catch (Exception e)
+            catch
             {
                 Console.WriteLine($"Ошибка при инициализации дисциплин");
             }
-        }
-
-        private async Task UpdateDisciplines()
-        {
-            foreach (var user in users)
-            {
-                foreach (var disciplinesLink in disciplinesLinks)
-                {
-
-                }
-
-            }
+            Console.WriteLine("Дисциплины иниицализированы.");
         }
 
         private async Task LoadStudents(List<string> links)
@@ -378,7 +368,7 @@ namespace AttestationSynchronizer
                     
                 }
                 
-                catch (Exception e)
+                catch
                 {
                     Console.WriteLine($"Ошибка при загрузке пользователя {user.Login}");
                 }
@@ -426,7 +416,7 @@ namespace AttestationSynchronizer
                 var document = await parser.ParseDocumentAsync(content);
                 return document;
             }
-            catch (Exception e)
+            catch
             {
                 Console.WriteLine($"Ошибка при загрузке страницы {targetUrl}");
                 cancelTokenSource.Cancel();
