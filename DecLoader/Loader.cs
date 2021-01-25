@@ -2,11 +2,13 @@
 using AngleSharp.Html.Parser;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AttestationSynchronizer
+namespace DecLoader
 {
     public class User
     {
@@ -43,6 +45,7 @@ namespace AttestationSynchronizer
             foreach (var user in users)
             {
                 tasks.Add(getPage("https://sdo.srspu.ru/my/", user));
+  
 
             }
 
@@ -301,7 +304,7 @@ namespace AttestationSynchronizer
 
 
     }
-    public class DecLoader
+    public class Loader
     {
         private List<User> users;
         private HtmlParser parser = new HtmlParser();
@@ -312,7 +315,7 @@ namespace AttestationSynchronizer
 
         private List<string> disciplinesLinks;
 
-        public DecLoader(List<User> users)
+        public Loader(List<User> users)
         {
             this.users = users;
             cancelTokenSource = new CancellationTokenSource();
@@ -321,7 +324,13 @@ namespace AttestationSynchronizer
 
 
             initDisciplines().Wait();
-            LoadStudents(disciplinesLinks).Wait();
+            try { LoadStudents(disciplinesLinks).Wait(); }
+            catch(Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{e.InnerException.InnerException.Message}");
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
 
         }
 
@@ -365,19 +374,14 @@ namespace AttestationSynchronizer
                 try
                 {
                     task1 = AddStudent(links, user);
-                    
+                    tasks.Add(task1);
+
                 }
-                
+
                 catch
                 {
-                    Console.WriteLine($"Ошибка при загрузке пользователя {user.Login}");
+                    throw new Exception($"Ошибка при загрузке пользователя {user.Login}");
                 }
-                finally
-                {
-                    tasks.Add(task1);
-                }
-                
-                
             }
             Task.WaitAll(tasks.ToArray());
 
