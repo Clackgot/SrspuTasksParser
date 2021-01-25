@@ -46,7 +46,7 @@ namespace GoogleSheets
 
         public async Task SendDisciplineInfo(string spreadSheetId, Discipline discipline, string sheetName)
         {
-            SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;  // Значение не будет парситься перед записью
+            SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;  // Значение не будет парситься перед записью
             ValueRange valueRange = new ValueRange();// Данные для отправки в таблицу
             valueRange.MajorDimension = "COLUMNS";
             var tempData = new List<IList<object>>(); //Подготавлемые данные для отправки в таблицу
@@ -69,7 +69,7 @@ namespace GoogleSheets
         public async Task SendData(string spreadSheetId, Discipline discipline, string sheetName)
         {
             await clearSheetSubject(spreadSheetId, sheetName, 30);
-            SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;  // Значение не будет парситься перед записью
+            SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;  // Значение не будет парситься перед записью
             ValueRange valueRange = new ValueRange();// Данные для отправки в таблицу
             valueRange.MajorDimension = "ROWS";//ROWS / COLUMNS
             var tempData = new List<IList<object>>(); //Подготавлемые данные для отправки в таблицу
@@ -98,7 +98,7 @@ namespace GoogleSheets
 
         private async Task clearSheetSubject(string sheetId, string sheetName, int lines)
         {
-            SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;  // TODO: Update placeholder value.
+            SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;  // TODO: Update placeholder value.
 
 
             ValueRange valueRange = new ValueRange();
